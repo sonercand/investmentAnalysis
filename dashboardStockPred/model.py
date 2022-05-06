@@ -47,7 +47,7 @@ class FeedBack(tf.keras.Model):
         return predictions
 
 
-def compile_and_fit(model, window, patience=2, max_epochs=100):
+def compile_and_fit(model, window, patience=2, max_epochs=10):
     early_stopping = tf.keras.callbacks.EarlyStopping(
         monitor="val_loss", patience=patience, mode="min"
     )
