@@ -36,6 +36,13 @@ def calculateCAPM(marketTic, stockTic):
     return expectedReturnTic
 
 
+def calculateCAPMviaDfs(marketDf, beta):
+    expectedReturnMarket = getExpectedReturn(marketDf, "Close")
+    riskFreeRate = getRiskFreeReturn(1) / 100
+    expectedReturnTic = riskFreeRate + beta * (expectedReturnMarket - riskFreeRate)
+    return expectedReturnTic
+
+
 if __name__ == "__main__":
     stockTic = "AAPL"
     marketTic = "^GSPC"
