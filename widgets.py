@@ -3,6 +3,8 @@ from dash import Dash, dcc, html, Input, Output, State
 import dash_bootstrap_components as dbc
 import plotly.graph_objs as go
 
+color1 = "#4990C2"
+
 
 def createCompanyInfoWidget(
     imageSource, companyName, exchange, industry, mCapitalisation, ipo, id="companyInfo"
@@ -68,7 +70,8 @@ def createStockVsMarketWidget(beta, expectedReturn, id="stockVsMarketVidget"):
                     ),
                 ]
             ),
-        ]
+        ],
+        id="stockVsMarketWidget_parent",
     )
 
 
@@ -114,8 +117,24 @@ def createStockSelectionWidget(stocks, tic, id="stock_picker"):
             dcc.Dropdown(
                 id=id,
                 options=stocks,
-                value=[tic],
-                multi=True,
+                value=tic,
+                multi=False,
+                style={"padding": "1em"},
+            )
+        ],
+        id="stock_picker_parent",
+        width=12,
+    )
+
+
+def createMarketSelectionWidget(exchangeOptions, defaultExchange, id="market_picker"):
+    return dbc.Col(
+        [
+            dcc.Dropdown(
+                id=id,
+                options=exchangeOptions,
+                value=defaultExchange,
+                multi=False,
                 style={"padding": "1em"},
             )
         ],
@@ -138,7 +157,16 @@ def createSustainabilityWidget(smi, tic, id="sus"):
         table_body = [html.Tbody(rows)]
 
         table = dbc.Table(table_header + table_body, bordered=True)
-        susWidget = html.Div([html.H2("Sustainability Results"), table])
+        susWidget = html.Div(
+            [
+                html.H2(
+                    "Sustainability Results",
+                    style={"color": color1},
+                ),
+                table,
+            ],
+            id=id,
+        )
     except:
         susWidget = html.Div(
             [html.H2("Sustainability Results"), html.Div("No Data Found!")], id=id

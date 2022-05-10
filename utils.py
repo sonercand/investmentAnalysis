@@ -6,6 +6,15 @@ import pandas as pd
 from dotenv import load_dotenv
 
 
+def getExchanges():
+    df = pd.read_csv("./data/exchanges.csv")
+    arr = df[["code", "name"]].values
+    dict_ = {}
+    for code, name in arr:
+        dict_[name] = code
+    return dict_
+
+
 class StockMarketInformation:
     def __init__(self, sandbox=False, tic=None):
         self.sandbox = sandbox
@@ -56,11 +65,8 @@ class StockMarketInformation:
             period: string:  valid periods are 1d, 5d, 1mo, 3mo, 6mo, 1y, 2y, 5y, 10y, ytd, max
         """
         tic = tic if tic != None else self.tic
-        if self.yData == None:
-            data = yf.Ticker(tic)
-            hist = data.history(period=period)
-        else:
-            hist = self.yData.history(period=period)
+        data = yf.Ticker(tic)
+        hist = data.history(period=period)
         return hist
 
     def getESGData(self, tic):

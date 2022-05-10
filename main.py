@@ -6,7 +6,7 @@ import pandas_datareader.data as web
 from datetime import datetime, timedelta
 from dash import Dash, dcc, html, Input, Output, State
 import dash_bootstrap_components as dbc
-from utils import StockMarketInformation as SMI
+from utils import StockMarketInformation as SMI, getExchanges
 from calcBeta import calculateBetaUsingYFinance
 import plotly.graph_objs as go
 from capitalAssetPricingModel import calculateCAPMviaDfs
@@ -17,32 +17,45 @@ from widgets import (
     createStockVsMarketGraph,
     createStockSelectionWidget,
     createSustainabilityWidget,
+    createMarketSelectionWidget,
 )
 
 app = Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
 
-
-# Default Data
-
-tic = "MNG.L"
+# exhcanges options and default values
+exchange_dict = getExchanges()
+exchangeOptions = list(exchange_dict.keys())
+print(exchangeOptions)
+defaultExchange = "US exchanges (NYSE, Nasdaq)"
+defaultExchangeCode = exchange_dict[defaultExchange]
+# default stock and stock selection options
+tic = "AAPL"
 period = "2y"
 smi = SMI(sandbox=False, tic=tic)
-ci = smi.getCompanyInfo()
+stockList = smi.getStockSymbols(exchange=defaultExchangeCode)
+stocks = smi.getStockSymbolList(
+    stockList
+)  # stock selection options for a given exchange market
+# default company info
+ci = smi.getCompanyInfo(tic=tic)
 
+# set market index for comparisions
 if ci["country"] == "GB":
     market = "L"
     marketIndex = "^FTMC"
-else:
+elif ci["country"] == "US":
     market = "US"
     marketIndex = "^GSPC"
-
-smiMarket = SMI(sandbox=False, tic=marketIndex)
-closeDataMarket = smiMarket.getHistoricalData(period=period)
-closeData = smi.getHistoricalData(period=period)
+else:  # set market index to us for the rest of the stocks
+    market = "US"
+    marketIndex = "^GSPC"
+# get default historical data
+closeDataMarket = smi.getHistoricalData(period=period, tic=marketIndex)
+closeData = smi.getHistoricalData(period=period, tic=tic)
 beta = calculateBetaUsingYFinance(closeData, closeDataMarket)
 expectedReturn = calculateCAPMviaDfs(closeDataMarket, beta)
-stockList = smi.getStockSymbols(exchange=market)
-stocks = smi.getStockSymbolList(stockList)
+
+# organise default company info
 companyName = ci["name"]
 companyCountry = ci["country"]
 exchange = ci["exchange"]
@@ -54,6 +67,11 @@ imageSource = ci["logo"]
 
 
 # load widgets ---------------------------
+exchangeSelectionWidget = createMarketSelectionWidget(
+    exchangeOptions=exchangeOptions,
+    defaultExchange=defaultExchange,
+    id="market_picker",
+)
 stockSelectionWidget = createStockSelectionWidget(stocks, tic, id="stock_picker")
 companyInfoWidget = createCompanyInfoWidget(
     imageSource, companyName, exchange, industry, mCapitalisation, ipo, id="companyInfo"
@@ -67,45 +85,155 @@ stockPriceVsMarketGraph = createStockVsMarketGraph(
     closeDataMarket, closeData, tic, id="stockVsMarketGraph"
 )
 
-susWidget = createSustainabilityWidget(smi, tic)
+susWidget = createSustainabilityWidget(smi, tic, id="sus")
+
+# colors
+color1 = "#4990C2"
 # Layout ---------------------------------
 app.layout = html.Div(
     [
-        dbc.Container(
+        html.Div(
             [
-                stockSelectionWidget,
                 dbc.Row(
                     [
-                        html.H2("General Info"),
-                        dbc.Col([companyInfoWidget], width=2),
-                        dbc.Col([stockPriceGraph], width=10),
-                    ],
-                    style={"border": "solid", "borderWidth": "1px", "padding": "1em"},
-                ),
-                dbc.Row(
-                    [
-                        dbc.Col(
-                            [html.H2("Stock vs Market"), stockVsMarketWidget],
-                            width=2,
+                        html.H2(
+                            "General Analysis and Information",
+                            style={
+                                "color": color1,
+                                "textAlign": "center",
+                                "padding": "3em",
+                            },
                         ),
-                        dbc.Col([stockPriceVsMarketGraph], width=10),
-                    ],
-                    style={"border": "solid", "borderWidth": "1px", "padding": "1em"},
-                ),
-                dbc.Row(
-                    dbc.Col(
-                        [susWidget],
-                        style={
-                            "border": "solid",
-                            "borderWidth": "1px",
-                            "padding": "1em",
-                        },
-                    )
-                ),
-            ]
+                        html.Br(),
+                        dbc.Col(
+                            [
+                                exchangeSelectionWidget,
+                                dbc.Button(
+                                    "Select the Exchange",
+                                    id="submit-val",
+                                    n_clicks=0,
+                                    style={
+                                        "background": color1,
+                                        "width": "80%",
+                                        "margin-left": "10%",
+                                        "margin-top": "0",
+                                    },
+                                ),
+                                stockSelectionWidget,
+                                dbc.Button(
+                                    "Select Stock",
+                                    id="submit-stock-val",
+                                    n_clicks=0,
+                                    style={
+                                        "background": color1,
+                                        "width": "80%",
+                                        "margin-left": "10%",
+                                        "margin-top": "0",
+                                    },
+                                ),
+                            ],
+                            width=2,
+                            style={
+                                "border": "solid",
+                                "border-width": "1px",
+                                "border-color": color1,
+                            },
+                        ),
+                        dbc.Col(
+                            [
+                                dbc.Tabs(
+                                    [
+                                        dbc.Tab(
+                                            dbc.Row(
+                                                [
+                                                    html.H2(
+                                                        "General Info",
+                                                        style={"color": color1},
+                                                    ),
+                                                    dbc.Col(
+                                                        [companyInfoWidget], width=2
+                                                    ),
+                                                    dbc.Col(
+                                                        [stockPriceGraph], width=10
+                                                    ),
+                                                ],
+                                                style={
+                                                    "padding": "1em",
+                                                    "border": "none",
+                                                },
+                                            ),
+                                            label="General Info",
+                                        ),
+                                        dbc.Tab(
+                                            dbc.Row(
+                                                [
+                                                    dbc.Col(
+                                                        [
+                                                            html.H2(
+                                                                "Stock vs Market",
+                                                                style={"color": color1},
+                                                            ),
+                                                            stockVsMarketWidget,
+                                                        ],
+                                                        width=2,
+                                                    ),
+                                                    dbc.Col(
+                                                        [stockPriceVsMarketGraph],
+                                                        width=10,
+                                                    ),
+                                                ],
+                                                style={
+                                                    "padding": "1em",
+                                                },
+                                            ),
+                                            label="Beta",
+                                        ),
+                                        dbc.Tab(
+                                            dbc.Row(
+                                                dbc.Col(
+                                                    [susWidget],
+                                                    style={
+                                                        "padding": "1em",
+                                                    },
+                                                )
+                                            ),
+                                            label="Sustainability",
+                                        ),
+                                    ],
+                                    style={"background": "rgba(73, 144, 194,.2)"},
+                                ),
+                            ],
+                            width=10,
+                            style={
+                                "border": "solid",
+                                "border-width": "1px",
+                                "border-color": color1,
+                            },
+                        ),
+                    ]
+                )
+            ],
+            style={"width": "95%", "margin": "0 auto"},
         )
     ]
 )
+
+
+@app.callback(
+    Output("stock_picker_parent", "children"),
+    [State("market_picker", "value")],
+    Input("submit-val", "n_clicks"),
+)
+def update_stocklist(market_picker_value, n_clicks):
+    if n_clicks > 0:
+        marketCode = exchange_dict[market_picker_value]
+        stockList = smi.getStockSymbols(exchange=marketCode)
+        stocks = smi.getStockSymbolList(stockList)
+        tic = stocks[0]
+        stockSelectionWidget = createStockSelectionWidget(
+            stocks, tic, id="stock_picker"
+        )
+        return stockSelectionWidget
 
 
 @app.callback(
@@ -114,44 +242,46 @@ app.layout = html.Div(
         Output("stockPriceGraph", "children"),
         Output("stockVsMarketGraph", "children"),
         Output("sus", "children"),
+        Output("stockVsMarketWidget_parent", "children"),
     ],
-    [Input("stock_picker", "value")],
+    [State("stock_picker", "value")],
+    [Input("submit-stock-val", "n_clicks")],
 )
-def update_graph(stock_ticker):
-    try:
-        tic = stock_ticker[-1]
-    except:
+def update_graph(stock_ticker, n_clicks):
+    if n_clicks > 0:
         tic = stock_ticker
 
-    period = "2y"
-    smi = SMI(sandbox=False, tic=tic)
-    ci = smi.getCompanyInfo()
-    companyName = ci["name"]
+        period = "2y"
+        smi = SMI(sandbox=False, tic=tic)
+        ci = smi.getCompanyInfo()
+        companyName = ci["name"]
 
-    exchange = ci["exchange"]
-    industry = ci["finnhubIndustry"]
-    ipo = ci["ipo"]
-    mCapitalisation = ci["marketCapitalization"]
-    imageSource = ci["logo"]
-    closeDataMarket = smiMarket.getHistoricalData(period=period)
-    closeData = smi.getHistoricalData(period=period)
-
-    return [
-        createCompanyInfoWidget(
-            imageSource,
-            companyName,
-            exchange,
-            industry,
-            mCapitalisation,
-            ipo,
-            id="companyInfo",
-        ),
-        createStockPricePlot(closeData, tic, id="stockPriceGraph"),
-        createStockVsMarketGraph(
-            closeDataMarket, closeData, tic, id="stockVsMarketGraph"
-        ),
-        createSustainabilityWidget(smi, tic, id="sus"),
-    ]
+        exchange = ci["exchange"]
+        industry = ci["finnhubIndustry"]
+        ipo = ci["ipo"]
+        mCapitalisation = ci["marketCapitalization"]
+        imageSource = ci["logo"]
+        closeDataMarket = smi.getHistoricalData(period=period, tic=marketIndex)
+        closeData = smi.getHistoricalData(period=period, tic=tic)
+        beta = calculateBetaUsingYFinance(closeData, closeDataMarket)
+        expectedReturn = calculateCAPMviaDfs(closeDataMarket, beta)
+        return [
+            createCompanyInfoWidget(
+                imageSource,
+                companyName,
+                exchange,
+                industry,
+                mCapitalisation,
+                ipo,
+                id="companyInfo",
+            ),
+            createStockPricePlot(closeData, tic, id="stockPriceGraph"),
+            createStockVsMarketGraph(
+                closeDataMarket, closeData, tic, id="stockVsMarketGraph"
+            ),
+            createSustainabilityWidget(smi, tic, id="sus"),
+            createStockVsMarketWidget(beta, expectedReturn, id="stockVsMarketVidget"),
+        ]
 
 
 if __name__ == "__main__":
