@@ -51,6 +51,22 @@ def calculateBeta(stockTic, marketTic, period, usingLogReturns=False):
     return beta
 
 
+def calculateBetaUsingYFinance(stockDf, marketDf, usingLogReturns=False):
+    if usingLogReturns:
+        stockDf["returnsLog"] = np.log(stockDf["Close"] / stockDf["Close"].shift())
+        marketDf["returns_log"] = np.log(marketDf["Close"] / marketDf["Close"].shift())
+        covariance = stockDf["returns_log"].cov(marketDf["returns_log"])
+        variance = marketDf["returns_log"].var()
+    else:
+        stockDf["returns"] = stockDf["Close"].pct_change(1)
+        marketDf["returns"] = marketDf["Close"].pct_change(1)
+        covariance = stockDf["returns"].cov(marketDf["returns"])
+        variance = marketDf["returns"].var()
+
+    beta = covariance / variance
+    return beta
+
+
 if __name__ == "__main__":
     stockTic = "AAPL"
     marketTic = "^GSPC"
