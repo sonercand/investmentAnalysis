@@ -166,6 +166,7 @@ def createSustainabilityWidget(smi, tic, id="sus"):
                 table,
             ],
             id=id,
+            style={"color": "white"},
         )
     except:
         susWidget = html.Div(

@@ -20,7 +20,7 @@ from widgets import (
     createMarketSelectionWidget,
 )
 
-app = Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 # exhcanges options and default values
 exchange_dict = getExchanges()
@@ -97,7 +97,7 @@ app.layout = html.Div(
                 dbc.Row(
                     [
                         html.H2(
-                            "General Analysis and Information",
+                            "General Stock Analysis and Information",
                             style={
                                 "color": color1,
                                 "textAlign": "center",
@@ -198,9 +198,13 @@ app.layout = html.Div(
                                                 )
                                             ),
                                             label="Sustainability",
+                                            style={"color": "white"},
                                         ),
                                     ],
-                                    style={"background": "rgba(73, 144, 194,.2)"},
+                                    style={
+                                        "background": "rgba(73, 144, 194,1)",
+                                        "color": "white",
+                                    },
                                 ),
                             ],
                             width=10,
@@ -208,6 +212,7 @@ app.layout = html.Div(
                                 "border": "solid",
                                 "border-width": "1px",
                                 "border-color": color1,
+                                "padding": "0",
                             },
                         ),
                     ]
