@@ -1,16 +1,8 @@
-from venv import create
-import pandas_datareader.data as web
-
-# import numpy as np
-# import tensorflow as tf
-from datetime import datetime, timedelta
 from dash import Dash, dcc, html, Input, Output, State
 import dash_bootstrap_components as dbc
 from utils import StockMarketInformation as SMI, getExchanges
-from calcBeta import calculateBetaUsingYFinance
-import plotly.graph_objs as go
-from capitalAssetPricingModel import calculateCAPMviaDfs
-from calcVolatility import calculateVolatility
+from Calculations.calcBeta import calculateBetaUsingYFinance
+from Calculations.capitalAssetPricingModel import calculateCAPMviaDfs
 from widgets import (
     createCompanyInfoWidget,
     createStockPricePlot,
@@ -20,7 +12,9 @@ from widgets import (
     createSustainabilityWidget,
     createMarketSelectionWidget,
     createVolatilityWidget,
+    createPredictionsWidget,
 )
+
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
@@ -207,6 +201,54 @@ app.layout = html.Div(
                                             label="Volatility",
                                             style={"color": "white"},
                                         ),
+                                        dbc.Tab(
+                                            dbc.Row(
+                                                [
+                                                    dbc.Col(
+                                                        [
+                                                            html.H3(
+                                                                "Use slider to select number of days to predict ",
+                                                                id="predict_title",
+                                                                style={
+                                                                    "color": color1,
+                                                                    "padding": "1em",
+                                                                },
+                                                            ),
+                                                            html.Br(),
+                                                            dcc.Slider(
+                                                                5,
+                                                                50,
+                                                                5,
+                                                                value=5,
+                                                                id="daysToPredict",
+                                                            ),
+                                                            dbc.Button(
+                                                                id="predictButton",
+                                                                n_clicks=0,
+                                                                children="Run Prediction!",
+                                                                style={
+                                                                    "background": color1,
+                                                                    "width": "80%",
+                                                                    "margin-left": "10%",
+                                                                    "margin-top": "0",
+                                                                },
+                                                            ),
+                                                        ],
+                                                        width=3,
+                                                        style={"margin-top": "10%"},
+                                                    ),
+                                                    dbc.Col(
+                                                        [
+                                                            dcc.Graph(
+                                                                id="prediction_graph",
+                                                                figure={},
+                                                            ),
+                                                        ]
+                                                    ),
+                                                ]
+                                            ),
+                                            label="Prediction",
+                                        ),
                                     ],
                                     style={
                                         "background": "rgba(73, 144, 194,1)",
@@ -246,6 +288,17 @@ def update_stocklist(market_picker_value, n_clicks):
             stocks, tic, id="stock_picker"
         )
         return stockSelectionWidget
+
+
+@app.callback(
+    Output("prediction_graph", "figure"),
+    [Input("predictButton", "n_clicks")],
+    [State("stock_picker", "value"), State("daysToPredict", "value")],
+)
+def update_prediction_graph(n_clicks, tic, days_to_predict):
+    if n_clicks < 1:
+        return {}
+    return createPredictionsWidget(tic, n_clicks, days_to_predict, id)
 
 
 @app.callback(
@@ -299,4 +352,4 @@ def update_graph(stock_ticker, n_clicks):
 
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run_server()

@@ -1,10 +1,37 @@
-from click import style
-from dash import Dash, dcc, html, Input, Output, State
+from dash import dcc, html
 import dash_bootstrap_components as dbc
 import plotly.graph_objs as go
-from calcVolatility import calculateVolatility
+from Calculations.calcVolatility import calculateVolatility
+
 
 color1 = "#4990C2"
+
+
+def createPredictionsWidget(tic, n_clicks, days_to_predict, id):
+    from widgetFunctions import trainAndPredict
+
+    results, dataset, stock_ticker, dates, input_width = trainAndPredict(
+        tic, days_to_predict
+    )
+    traces = [
+        {"x": dates, "y": results, "name": stock_ticker + " predictions"},
+        {
+            "x": dataset.index[len(dataset) - input_width - 1 :],
+            "y": dataset["Close"][len(dataset) - input_width - 1 :],
+            "name": stock_ticker,
+        },
+    ]
+
+    fig = {
+        "data": traces,
+        "layout": {
+            "title": "{}-day-prediction for {} ".format(
+                str(days_to_predict), stock_ticker
+            )
+        },
+    }
+
+    return fig
 
 
 def createVolatilityWidget(tic):

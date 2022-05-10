@@ -11,9 +11,10 @@ Bj = Covariance/Variance where
     Covariance = Measure of a stocks's return relative to that of the market
     Variance = Measure of how the market moves relative to its mean
 """
-from calcBeta import calculateBeta
-from calcRiskFreeReturn import getRiskFreeReturn
-from calcExpectedReturn import getExpectedReturn
+
+from Calculations.calcBeta import calculateBeta
+from Calculations.calcRiskFreeReturn import getRiskFreeReturn
+from Calculations.calcExpectedReturn import getExpectedReturn
 from datetime import datetime, timedelta
 import pandas_datareader as web
 

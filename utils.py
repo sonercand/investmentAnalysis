@@ -1,4 +1,3 @@
-from matplotlib.pyplot import tick_params
 import yfinance as yf
 import finnhub as fh
 import os
@@ -76,20 +75,3 @@ class StockMarketInformation:
     def getTotalESGScore(self, tic=None):
         esgData = self.getESGData(tic)
         return esgData.totalEsg.values[0]
-
-
-"""
-example:
-
-smi = StockMarketInformation(sandbox=True, tic="AAPL")
-print(smi.getCompanyInfo())
-n = 1
-for item in smi.getStockSymbols("L"):
-    print(item["symbol"])
-    n += 1
-    if n > 10:
-        break
-
-print(smi.getESGData().columns)
-print(smi.getTotalESGScore())
-"""
