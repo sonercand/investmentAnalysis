@@ -2,8 +2,63 @@ from click import style
 from dash import Dash, dcc, html, Input, Output, State
 import dash_bootstrap_components as dbc
 import plotly.graph_objs as go
+from calcVolatility import calculateVolatility
 
 color1 = "#4990C2"
+
+
+def createVolatilityWidget(tic):
+    vol, norm_returns = calculateVolatility(tic)
+    widget = dbc.Row(
+        [
+            dbc.Col(
+                [
+                    dbc.Card(
+                        [
+                            dbc.CardBody(
+                                [
+                                    dbc.ListGroup(
+                                        [
+                                            dbc.ListGroupItem("Stock: {}".format(tic)),
+                                            dbc.ListGroupItem(
+                                                "Standard Deviation on Returns: {}".format(
+                                                    vol
+                                                )
+                                            ),
+                                        ]
+                                    )
+                                ]
+                            )
+                        ]
+                    )
+                ],
+                width=2,
+            ),
+            dbc.Col(
+                [
+                    dcc.Graph(
+                        id="graphVolatility",
+                        figure={
+                            "data": [
+                                {
+                                    "x": norm_returns.index,
+                                    "y": norm_returns["returns_norm"],
+                                    "name": tic,
+                                }
+                            ],
+                            "layout": {
+                                "title": "Normalised Daily Returns for {}".format(tic)
+                            },
+                        },
+                        style={"marginTop": "4em"},
+                    )
+                ],
+                width=10,
+            ),
+        ],
+        id="volatility",
+    )
+    return widget
 
 
 def createCompanyInfoWidget(

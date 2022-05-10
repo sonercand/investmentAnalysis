@@ -10,6 +10,7 @@ from utils import StockMarketInformation as SMI, getExchanges
 from calcBeta import calculateBetaUsingYFinance
 import plotly.graph_objs as go
 from capitalAssetPricingModel import calculateCAPMviaDfs
+from calcVolatility import calculateVolatility
 from widgets import (
     createCompanyInfoWidget,
     createStockPricePlot,
@@ -18,6 +19,7 @@ from widgets import (
     createStockSelectionWidget,
     createSustainabilityWidget,
     createMarketSelectionWidget,
+    createVolatilityWidget,
 )
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
@@ -25,7 +27,7 @@ app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 # exhcanges options and default values
 exchange_dict = getExchanges()
 exchangeOptions = list(exchange_dict.keys())
-print(exchangeOptions)
+
 defaultExchange = "US exchanges (NYSE, Nasdaq)"
 defaultExchangeCode = exchange_dict[defaultExchange]
 # default stock and stock selection options
@@ -86,7 +88,7 @@ stockPriceVsMarketGraph = createStockVsMarketGraph(
 )
 
 susWidget = createSustainabilityWidget(smi, tic, id="sus")
-
+volWidget = createVolatilityWidget(tic)
 # colors
 color1 = "#4990C2"
 # Layout ---------------------------------
@@ -200,6 +202,11 @@ app.layout = html.Div(
                                             label="Sustainability",
                                             style={"color": "white"},
                                         ),
+                                        dbc.Tab(
+                                            [volWidget],
+                                            label="Volatility",
+                                            style={"color": "white"},
+                                        ),
                                     ],
                                     style={
                                         "background": "rgba(73, 144, 194,1)",
@@ -248,6 +255,7 @@ def update_stocklist(market_picker_value, n_clicks):
         Output("stockVsMarketGraph", "children"),
         Output("sus", "children"),
         Output("stockVsMarketWidget_parent", "children"),
+        Output("volatility", "children"),
     ],
     [State("stock_picker", "value")],
     [Input("submit-stock-val", "n_clicks")],
@@ -286,6 +294,7 @@ def update_graph(stock_ticker, n_clicks):
             ),
             createSustainabilityWidget(smi, tic, id="sus"),
             createStockVsMarketWidget(beta, expectedReturn, id="stockVsMarketVidget"),
+            createVolatilityWidget(tic),
         ]
 
 
