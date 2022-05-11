@@ -15,7 +15,7 @@ def getDailyReturns(dataFrame):
 
 
 def calcWeights(weightsRaw):
-    if np.sum(weightsRaw) == 1:
+    if np.sum(weightsRaw) != 1:
         return weightsRaw / np.sum(weightsRaw)
     else:
         return weightsRaw
