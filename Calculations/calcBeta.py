@@ -59,7 +59,9 @@ def calculateBetaUsingYFinance(stockDf, marketDf, usingLogReturns=False):
         variance = marketDf["returns_log"].var()
     else:
         stockDf["returns"] = stockDf["Close"].pct_change(1)
+        stockDf.dropna(inplace=True)
         marketDf["returns"] = marketDf["Close"].pct_change(1)
+        marketDf.dropna(inplace=True)
         covariance = stockDf["returns"].cov(marketDf["returns"])
         variance = marketDf["returns"].var()
 
