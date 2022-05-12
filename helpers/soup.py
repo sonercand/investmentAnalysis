@@ -19,12 +19,23 @@ def saveFSTE100Components():
         if len(rowVals) > 0:
             industry = rowVals[2]
             industry = industry.replace("\n", "")
-            ftse100.append({"symbol": rowVals[1] + ".L", "sector": rowVals[2]})
+            ftse100.append({"symbol": str(rowVals[1]) + ".L", "sector": rowVals[2]})
     df = pd.DataFrame(ftse100)
-    print(df.head())
+
     df.to_csv("./data/ftse100Components.csv", index=False)
+
+
+def saveSNP500Components():
+    page = requests.get("https://en.wikipedia.org/wiki/List_of_S%26P_500_companies")
+    payload = pd.read_html("https://en.wikipedia.org/wiki/List_of_S%26P_500_companies")
+    first_table = payload[0]
+    second_table = payload[1]
+    df = first_table[["Symbol", "GICS Sector"]]
+    df.to_csv("./data/snp500Components.csv", index=False)
 
 
 if __name__ == "__main__":
     saveFSTE100Components()
+    saveSNP500Components()
     print(pd.read_csv("./data/ftse100Components.csv"))
+    print(pd.read_csv("./data/snp500Components.csv"))
