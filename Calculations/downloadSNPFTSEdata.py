@@ -11,5 +11,5 @@ print(len(tickers))
 
 period = "5y"
 data = getData(tickers, period)
-data.to_csv("./data/snpFtseClose.csv")
+data.to_csv("./data/snpFtseClose.csv", index=False)
 print(data.head())
