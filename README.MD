@@ -24,5 +24,6 @@ and repeat step 1
 
 4) Check everythings is working:
 
-    
     python -m app.py
+    
+    
