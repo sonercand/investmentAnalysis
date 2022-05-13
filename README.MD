@@ -27,11 +27,6 @@ and repeat step 1
 
 4) Check everythings is working:
 
-<<<<<<< HEAD
-    python -m app.py
-    
-    
-=======
           
           python -m app.py
           
@@ -59,4 +54,3 @@ if it fails try pulling first
 
           
           git pull origin main
->>>>>>> 3b7f85e7bccfd4712692d0281c78bb3749e16af7
