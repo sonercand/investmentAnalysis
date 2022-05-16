@@ -20,12 +20,14 @@ cascaded loops for each coef. (might take too long to calculate)
 
 
 """
+from pickletools import optimize
 from matplotlib import ticker
 from calcExpectedReturn import getExpectedReturn
 import pandas as pd
 import numpy as np
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+from scipy.optimize import minimize
 
 
 def calculateLogReturn(data):
@@ -78,6 +80,12 @@ def portfolioRisk(weights, covMatrix):
         print(e, varPort, weights)
 
 
+def sharpeRatio(weights, expReturnsAnnual, covMatrix):
+    return portfolioReturns(
+        weights=weights, expReturnsAnnual=expReturnsAnnual
+    ) / portfolioRisk(weights, covMatrix)
+
+
 def setRandomWeights(n):
     w = np.random.random(n)
     return w / np.sum(w)
@@ -104,8 +112,88 @@ def randomSolve(expReturnsAnnual, covMatrix, tickers, n_iter=3000):
     return output
 
 
+def portfolioRiskConstraint(weights, covMatrix, risk):
+    calcRisk = portfolioRisk(weights, covMatrix)
+    return calcRisk - risk
+
+
+def portfolioRiskConstraintRangeLB(weights, covMatrix, minRisk):
+    min_ = minRisk
+    calcRisk = portfolioRisk(weights, covMatrix)
+    return calcRisk - min_  # calcRisk>min_
+
+
+def portfolioRiskConstraintRangeUB(weights, covMatrix, maxRisk):
+    max_ = maxRisk
+    calcRisk = portfolioRisk(weights, covMatrix)
+    return max_ - calcRisk  # -calcRisk+max_
+
+
+def portfolioReturnsObjFun(weights, expReturnsAnnual):
+    return -1 * portfolioReturns(weights=weights, expReturnsAnnual=expReturnsAnnual)
+
+
+def portfolioSharpeRatioObjFun(weights, expReturnsAnnual, covMatrix):
+    return -1 * sharpeRatio(weights, expReturnsAnnual, covMatrix)
+
+
+# portfolio optimisation for a given risk range
+
+
+def maximisePortfolioReturnRange(covMatrix, riskRange, tickers, expectedAnnualReturns):
+    constraintA = {
+        "type": "eq",
+        "fun": lambda x: np.sum(x) - 1,
+    }  # sum of the weights = 1
+    constraintB = {
+        "type": "ineq",
+        "fun": portfolioRiskConstraintRangeLB,
+        "args": (covMatrix, riskRange[0]),
+    }
+    constraintC = {
+        "type": "ineq",
+        "fun": portfolioRiskConstraintRangeUB,
+        "args": (covMatrix, riskRange[1]),
+    }
+    bounds = tuple((0, 1) for _ in range(len(tickers)))
+    initialWeights = setRandomWeights(len(tickers))
+    result = minimize(
+        fun=portfolioReturnsObjFun,
+        x0=initialWeights,
+        args=expectedAnnualReturns,
+        method="SLSQP",
+        bounds=bounds,
+        constraints=[constraintA, constraintB, constraintC],
+    )
+    return result["x"]
+
+
+# portfolio optimisation for a given risk value
+def maximisePortfolioReturn(covMatrix, risk, tickers, expectedAnnualReturns):
+    constraintA = {
+        "type": "eq",
+        "fun": lambda x: np.sum(x) - 1,
+    }  # sum of the weights = 1
+    constraintB = {
+        "type": "eq",
+        "fun": portfolioRiskConstraint,
+        "args": (covMatrix, risk),
+    }
+    bounds = tuple((0, 1) for _ in range(len(tickers)))
+    initialWeights = setRandomWeights(len(tickers))
+    result = minimize(
+        fun=portfolioReturnsObjFun,
+        x0=initialWeights,
+        args=expectedAnnualReturns,
+        method="SLSQP",
+        bounds=bounds,
+        constraints=[constraintA, constraintB],
+    )
+    return result["x"].round(3)
+
+
 data = pd.read_csv("./data/snpFtseClose.csv")
-dr, tickers, covMatrix = processData(data=data, period=5, useLogReturns=True)
+dr, tickers, covMatrix = processData(data=data, period=2, useLogReturns=True)
 print(dr.head())
 
 eAR = expectedAnnualReturns(dr)
@@ -113,3 +201,10 @@ print(eAR.loc["AAPL"])
 eAR = expectedAnnualReturns(dr)
 dfR = randomSolve(eAR, covMatrix=covMatrix, tickers=tickers)
 print(dfR.head())
+risk = [0.01, 0.2]
+result = maximisePortfolioReturnRange(
+    covMatrix, risk, tickers, expectedAnnualReturns=eAR
+)
+print(result)
+print(portfolioRisk(result, covMatrix))
+print(portfolioReturns(weights=result, expReturnsAnnual=eAR))
