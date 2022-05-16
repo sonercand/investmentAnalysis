@@ -1,23 +1,32 @@
 """
-TODO:
-Return a portfolio with an optimum stock coefficients array that maximizes return min. risk
+Builds a portfolio using optimisation
 
-how: 
-pre: calculate expected return for each component and store it
-1) Random Path
-dictionary[return,risk] = coefficients
-k=100000
-while m<k:
-    select random coef. for each stock item where each coef is between 0 and 100
-    normalise coef so that sum is equal to 1
-    calc estimated return and estimated risk
-    dictionary[(return,risk)] = current coefficients
+data: pandas dataframe: dataset that contains ticker data for selected stocks. Its index is Date column, other columns have the ticker name, values are daily close values.
 
-For a given risk "apetite" say range between 0-10% select the max return then return the coeff belong to that return.
-2) use optimiser algorithm (markowitz model specifically)
-2) Using grid search
-cascaded loops for each coef. (might take too long to calculate)
+period: Int: Number of years to extract close values. Based on that period, daily returns are calculated and aggregated.
 
+risk: Intended risk value. It can be a float or a list of float containing only the intended lowest risk and the highest risk.
+
+objectFunction: String: Has only 2 possible values atm. These are "Returns" and "Sharpe Ratio". It is used to selected the function that will be optimised.
+
+useLogReturns: bool: Instead of normal returns if set the True optimisation algorithm will use log of the returns.
+
+
+example usage: 
+
+        data = pd.read_csv("./data/snpFtseClose.csv")
+        op = OptimisePortfolio(
+            data=data, period=2, risk=[0.05, 0.2], objectFunction="Returns", useLogReturns=False
+        )
+        dr, tickers, covMatrix = op.processData()
+        expectedAnnualReturns = op.expectedAnnualReturns(dr)
+
+        res = op.maximizePortfolioReturns(covMatrix, tickers, expectedAnnualReturns)
+        print(res)
+        pr = op.portfolioReturns(res, expectedAnnualReturns)
+        print(pr)
+        pRisk = op.portfolioRisk(res, covMatrix)
+        print(pRisk)
 
 """
 
@@ -217,18 +226,3 @@ class OptimisePortfolio:
             constraints=constraits,
         )
         return result["x"].round(4)
-
-
-data = pd.read_csv("./data/snpFtseClose.csv")
-op = OptimisePortfolio(
-    data=data, period=2, risk=[0.05, 0.2], objectFunction="Returns", useLogReturns=False
-)
-dr, tickers, covMatrix = op.processData()
-expectedAnnualReturns = op.expectedAnnualReturns(dr)
-
-res = op.maximizePortfolioReturns(covMatrix, tickers, expectedAnnualReturns)
-print(res)
-pr = op.portfolioReturns(res, expectedAnnualReturns)
-print(pr)
-pRisk = op.portfolioRisk(res, covMatrix)
-print(pRisk)
