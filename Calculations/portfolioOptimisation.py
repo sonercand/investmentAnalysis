@@ -151,17 +151,20 @@ class OptimisePortfolio:
     def portfolioSharpeRatioObjFun(self, weights, expReturnsAnnual, covMatrix):
         return -1 * self.sharpeRatio(weights, expReturnsAnnual, covMatrix)
 
+    def portfolioReturnsObjFun(self, weights, expReturnsAnnual):
+        return -1 * self.portfolioReturns(weights, expReturnsAnnual)
+
     def sumofWeightsConstrait(self):
         return {
             "type": "eq",
             "fun": lambda x: np.sum(x) - 1,
         }
 
-    def portfolioRiskRangeLBConstrait(self, weights, covMatrix):
+    def portfolioRiskRangeLBConstrait(self, weights, covMatrix, risk):
         min_ = self.risk[0]
         return self.portfolioRisk(weights, covMatrix) - min_
 
-    def portfolioRiskRangeUBConstrait(self, weights, covMatrix):
+    def portfolioRiskRangeUBConstrait(self, weights, covMatrix, risk):
         max_ = self.risk[1]
         return max_ - self.portfolioRisk(weights, covMatrix)
 
@@ -172,8 +175,10 @@ class OptimisePortfolio:
     def maximizePortfolioReturns(self, covMatrix, tickers, expectedAnnualReturns):
         if self.objectFunction == "Sharpe":
             objFun = self.portfolioSharpeRatioObjFun
+            args = (expectedAnnualReturns, covMatrix)
         elif self.objectFunction == "Returns":
-            objFun = self.portfolioReturns
+            objFun = self.portfolioReturnsObjFun
+            args = expectedAnnualReturns
         else:
             print("Object function should be either Sharpe or Returns")
         constraits = []
@@ -206,16 +211,18 @@ class OptimisePortfolio:
         result = minimize(
             fun=objFun,
             x0=initialWeights,
-            args=(expectedAnnualReturns, covMatrix),
+            args=args,
             method="SLSQP",
             bounds=bounds,
             constraints=constraits,
         )
-        return result["x"].round(3)
+        return result["x"].round(4)
 
 
 data = pd.read_csv("./data/snpFtseClose.csv")
-op = OptimisePortfolio(data=data, period=2, risk=0.2)
+op = OptimisePortfolio(
+    data=data, period=2, risk=[0.05, 0.2], objectFunction="Returns", useLogReturns=False
+)
 dr, tickers, covMatrix = op.processData()
 expectedAnnualReturns = op.expectedAnnualReturns(dr)
 
