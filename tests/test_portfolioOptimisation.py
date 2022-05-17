@@ -235,3 +235,93 @@ def test_portfolioRisk():
     pr = op.portfolioRisk(weights, covMatrix=covMatrix)
     std = dr.std().mean() * (252**0.5)
     assert std == pr
+
+
+def test_maximizePortfolioReturns():
+    closeValuesLR = {
+        "A": [1, 1, 1, 1, 1],  # zero risk zero return
+        "B": [1000, 1200, 960, 1152, 921.6],  # risk = 0.053333, return 0
+        "C": [100, 100, 100, 100, 100],  # zero risk zero return
+        "D": [100, 101, 102, 101, 102],  # low risk  return 1.259878
+        "E": [20, 23, 24, 18, 40],  # hight risk high return
+        "Date": [
+            datetime(2022, 1, 1),
+            datetime(2022, 1, 2),
+            datetime(2022, 1, 3),
+            datetime(2022, 1, 4),
+            datetime(2022, 1, 5),
+        ],
+    }
+    dataLR = pd.DataFrame(closeValuesLR)
+    op = OptimisePortfolio(
+        dataLR,
+        1,
+        risk=0,
+        useLogReturns=False,
+        workDaysinYear=252,
+        objectFunction="Sharpe",
+    )
+    dr, tickers, covMatrix = op.processData()
+    expAR = op.expectedAnnualReturns(dr)
+    # if we set low risk we should expect that coef of E should be less than the rest and A and C which have zero risk should have larger coef.
+    op.risk = 0.01
+    res = op.maximizePortfolioReturns(covMatrix, tickers, expAR).round(4)
+    print(res)
+    assert res[0] > res[1]
+    assert res[0] > res[4]
+    assert res[0] > res[3]
+    assert res[2] > res[1]
+    assert res[2] > res[4]
+    assert res[2] > res[3]
+    # set high risk then coef of A and C should be smaller and coed of E should be larger
+    op.risk = 0.99
+    res = op.maximizePortfolioReturns(covMatrix, tickers, expAR).round(4)
+    print(res)
+    assert res[0] < res[1]
+    assert res[0] < res[4]
+    assert res[0] < res[3]
+    assert res[2] < res[1]
+    assert res[2] < res[4]
+    assert res[2] < res[3]
+
+
+def test_plot():
+    import matplotlib.pyplot as plt
+
+    closeValuesLR = {
+        "A": [1, 1, 1, 1, 1],  # zero risk zero return
+        "B": [1000, 1200, 960, 1152, 921.6],  # risk = 0.053333, return 0
+        "C": [100, 100, 100, 100, 100],  # zero risk zero return
+        "D": [100, 101, 102, 101, 102],  # low risk  return 1.259878
+        "E": [20, 23, 24, 18, 40],  # hight risk high return
+        "Date": [
+            datetime(2022, 1, 1),
+            datetime(2022, 1, 2),
+            datetime(2022, 1, 3),
+            datetime(2022, 1, 4),
+            datetime(2022, 1, 5),
+        ],
+    }
+    dataLR = pd.DataFrame(closeValuesLR)
+    op = OptimisePortfolio(
+        dataLR,
+        1,
+        risk=0,
+        useLogReturns=False,
+        workDaysinYear=252,
+        objectFunction="Sharpe",
+    )
+    dr, tickers, covMatrix = op.processData()
+    expAR = op.expectedAnnualReturns(dr)
+    result_df = op.genRandomPortfolios(
+        expReturnsAnnual=expAR, covMatrix=covMatrix, tickers=tickers, n_iter=10000
+    )
+    print(result_df[["risk", "returns"]].head(), result_df.columns)
+    plt.scatter(result_df.risk, result_df.returns)
+    for risk in np.arange(0.0, 5, 0.1):
+        op.risk = risk
+        weights = op.maximizePortfolioReturns(covMatrix, tickers, expAR).round(4)
+        portfolioReturn = op.portfolioReturns(weights=weights, expReturnsAnnual=expAR)
+        portRisk = op.portfolioRisk(weights=weights, covMatrix=covMatrix)
+        plt.scatter(portRisk, portfolioReturn, color="red")
+    plt.show()
