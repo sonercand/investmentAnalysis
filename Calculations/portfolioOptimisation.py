@@ -58,10 +58,11 @@ class OptimisePortfolio:
 
     def calculateLogReturn(self, data: pd.DataFrame):
         """return log returns"""
-        return np.log(data / data.shift(1)).dropna(inplace=True)
+        return np.log(data / data.shift(1)).dropna()
 
     def calculateReturn(self, data: pd.DataFrame):
-        return data.pct_change(1).dropna(inplace=True)
+        """return percent daily return"""
+        return data.pct_change(1).dropna()
 
     def expectedAnnualReturns(self, dr: pd.DataFrame):
         """

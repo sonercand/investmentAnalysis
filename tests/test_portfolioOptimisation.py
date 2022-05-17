@@ -1,3 +1,4 @@
+from turtle import st
 from Calculations.portfolioOptimisation import OptimisePortfolio
 from datetime import datetime, timedelta
 import pandas as pd
@@ -8,8 +9,8 @@ stocks = ["A", "B", "C"]
 global closeValues
 closeValues = {
     "A": [100, 100, 100, 100],
-    "B": [100, 110, 120, 140],
-    "C": ["1", "2", "3", "4"],
+    "B": [100, 110, 220, 220 * 4],
+    "C": [1, 2, 4, 8],
     "date": [
         datetime(2022, 1, 1),
         datetime(2022, 1, 2),
@@ -19,17 +20,18 @@ closeValues = {
 }
 global data
 data = pd.DataFrame(closeValues)
+global op
+op = OptimisePortfolio(
+    data,
+    1,
+    risk=[0.2],
+    useLogReturns=True,
+    workDaysinYear=252,
+    objectFunction="Sharpe",
+)
 
 
 def test_init():
-    op = OptimisePortfolio(
-        data,
-        1,
-        risk=[0.2],
-        useLogReturns=True,
-        workDaysinYear=252,
-        objectFunction="Sharpe",
-    )
     pd.testing.assert_frame_equal(op.data, data)
     assert op.useRiskRange == True
 
@@ -57,7 +59,17 @@ def test_calculateLogReturn():
         objectFunction="Sharpe",
     )
     returnsLn = op.calculateLogReturn(dataLR[["A", "B"]])
-    returnsLn.dropna(inplace=True)
     np.testing.assert_array_equal(
         returnsLn.values, [[1.0, 1.0], [2.0, 0.0], [3.0, 100.0]]
     )
+
+
+def test_calculateReturn():
+    returnsPct = op.calculateReturn(data[stocks]).round(3)
+    expectedReturns = [[0.0, 0.1, 1.0], [0.0, 1.0, 1.0], [0.0, 3.0, 1.0]]
+    for e, a in zip(returnsPct.values, expectedReturns):
+        assert list(e) == list(a)
+
+
+if __name__ == "__main__":
+    test_calculateReturn()
