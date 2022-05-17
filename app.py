@@ -1,5 +1,5 @@
 from dash import Dash, dcc, html, Input, Output, callback
-from pages import stock, portfolio, navigation
+from pages import stock, portfolio, navigation, portfolioGeneration
 import dash_bootstrap_components as dbc
 
 
@@ -25,9 +25,11 @@ def display_page(pathname):
         return portfolio.layout
     elif pathname == "/":
         return layout_index
+    elif pathname == "/portfolio-generation":
+        return portfolioGeneration.layout
     else:
         return "404"
 
 
 if __name__ == "__main__":
-    app.run_server(debug=False)
+    app.run_server(debug=True)

@@ -5,6 +5,7 @@ navbar = dbc.NavbarSimple(
     children=[
         dbc.NavItem(dbc.NavLink("Stock Analysis", href="/stock-analysis")),
         dbc.NavItem(dbc.NavLink("Portfolio Analysis", href="/portfolio-analysis")),
+        dbc.NavItem(dbc.NavLink("Portfolio Generation", href="/portfolio-generation")),
     ],
     brand="Port/Stock",
     brand_href="/",
