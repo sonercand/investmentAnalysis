@@ -56,6 +56,9 @@ class OptimisePortfolio:
         self.useRiskRange = True if isinstance(risk, list) else False
         self.objectFunction = objectFunction
 
+    def setUseLogReturns(self, val=False):
+        self.useLogReturns = val
+
     def calculateLogReturn(self, data: pd.DataFrame):
         """return log returns"""
         return np.log(data / data.shift(1)).dropna()
@@ -64,17 +67,8 @@ class OptimisePortfolio:
         """return percent daily return"""
         return data.pct_change(1).dropna()
 
-    def expectedAnnualReturns(self, dr: pd.DataFrame):
-        """
-        args:
-            dr: pandas dataframe: daily returns for tickers
-        returns:
-            expReturnsAnnual: pandas dataframe:annualised returns where tickers are the dataframe index
-        """
-        expReturnsDaily = dr.mean()
-        workDaysInYear = self.workDaysinYear
-        expReturnsAnnual = ((1 + expReturnsDaily) ** (workDaysInYear)) - 1
-        return expReturnsAnnual
+    def expectedAnnualReturns(self, dr: pd.DataFrame) -> pd.Series:
+        return dr.mean() * self.workDaysinYear
 
     def portfolioReturns(
         self, weights: np.ndarray, expReturnsAnnual: pd.DataFrame
@@ -133,28 +127,30 @@ class OptimisePortfolio:
         output = pd.DataFrame(results)
         return output
 
-    def processData(self):
-        data = self.data
-        period = self.period
-        useLogReturns = self.useLogReturns
-        calculateLogReturn = self.calculateLogReturn
-        data.reset_index(inplace=True)
-        data["Date"] = pd.to_datetime(data.Date)
-        tickers = list(data.columns)
-        tickers.remove("index")
-        tickers.remove("Date")
+    def removeNullCols(self, tickers):
         for col in tickers:
-            percent_missing = data[col].isnull().sum() * 100 / len(data[col])
+            percent_missing = self.data[col].isnull().sum() * 100 / len(self.data[col])
             if percent_missing > 70:  # remove ticks that have few data points
                 tickers.remove(col)
+        return tickers
+
+    def processData(self):
+        """returns dr, tickers,covMatrix"""
+        tickers = list(self.data.columns)
+        try:
+            tickers.remove("index")
+        except:
+            print("dataset does not have redundant index column")
+        tickers.remove("Date")
+        tickers = self.removeNullCols(tickers)
         currentDay = datetime.now()
-        lastYearToday = currentDay - relativedelta(years=period)
-        data = data[
-            (pd.to_datetime(data["Date"]) > lastYearToday)
-            & (pd.to_datetime(data["Date"]) < currentDay)
-        ]
-        if useLogReturns:
-            dr = calculateLogReturn(data[tickers])  # log returns daily
+        lastYearToday = currentDay - relativedelta(years=self.period)
+        data = self.data[
+            (pd.to_datetime(self.data["Date"]) > lastYearToday)
+            & (pd.to_datetime(self.data["Date"]) < currentDay)
+        ][tickers]
+        if self.useLogReturns:
+            dr = self.calculateLogReturn(data[tickers])  # log returns daily
         else:
             dr = self.calculateReturn(data[tickers])  # daily returns
         covMatrix = dr.cov()
