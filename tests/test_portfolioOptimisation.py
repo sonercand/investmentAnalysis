@@ -188,3 +188,50 @@ def test_portfolioReturns():
     # only stock b
     weights = [0, 1, 0]
     assert 0.01 * 252 == op.portfolioReturns(weights, expAR).round(4)
+
+
+def test_portfolioRisk():
+    closeValuesLR = {
+        "A": [100, 101, 100, 101, 100],  # std  = 0.01
+        "B": [1000, 1200, 960, 1152, 921.6],  # std = 0.2
+        "C": [100, 100, 100, 100, 100],  # std= 0
+        "Date": [
+            datetime(2022, 1, 1),
+            datetime(2022, 1, 2),
+            datetime(2022, 1, 3),
+            datetime(2022, 1, 4),
+            datetime(2022, 1, 5),
+        ],
+    }
+    dataLR = pd.DataFrame(closeValuesLR)
+    op = OptimisePortfolio(
+        dataLR,
+        1,
+        risk=[0.2],
+        useLogReturns=False,
+        workDaysinYear=252,
+        objectFunction="Sharpe",
+    )
+
+    dr, tickers, covMatrix = op.processData()
+    # only C
+    weights = np.array([0, 0, 1])
+    pr = op.portfolioRisk(weights, covMatrix=covMatrix)
+    assert pr == 0.0
+    # only A
+    weights = np.array([1, 0, 0])
+    stdADaily = dr["A"].std()
+    stdAAnnual = stdADaily * (252**0.5)
+    pr = op.portfolioRisk(weights, covMatrix=covMatrix)
+    assert pr.round(6) == stdAAnnual.round(6)
+    # only B
+    weights = np.array([0, 1, 0])
+    pr = op.portfolioRisk(weights, covMatrix=covMatrix)
+    stdADaily = dr["B"].std()
+    stdAAnnual = stdADaily * (252**0.5)
+    assert pr.round(6) == stdAAnnual.round(6)
+    # equal weight
+    weights = np.array([1 / 3, 1 / 3, 1 / 3])
+    pr = op.portfolioRisk(weights, covMatrix=covMatrix)
+    std = dr.std().mean() * (252**0.5)
+    assert std == pr
