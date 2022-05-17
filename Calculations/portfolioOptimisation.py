@@ -58,7 +58,10 @@ class OptimisePortfolio:
 
     def calculateLogReturn(self, data: pd.DataFrame):
         """return log returns"""
-        return np.log(data / data.shift(1))
+        return np.log(data / data.shift(1)).dropna(inplace=True)
+
+    def calculateReturn(self, data: pd.DataFrame):
+        return data.pct_change(1).dropna(inplace=True)
 
     def expectedAnnualReturns(self, dr: pd.DataFrame):
         """
@@ -151,9 +154,8 @@ class OptimisePortfolio:
         ]
         if useLogReturns:
             dr = calculateLogReturn(data[tickers])  # log returns daily
-            dr.dropna(inplace=True)
         else:
-            dr = data[tickers].pct_change(1).dropna()  # daily returns
+            dr = self.calculateReturn(data[tickers])  # daily returns
         covMatrix = dr.cov()
         return dr, tickers, covMatrix
 
