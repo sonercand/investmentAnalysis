@@ -4,6 +4,13 @@ from Calculations.portfolioOptimisation import OptimisePortfolio
 import pandas as pd
 import plotly.express as px
 
+"""
+1) filter companies by sector
+2) optimise by risk portfolio volatility for maximum returns
+
+"""
+sectors = pd.read_csv("./data/sectors.csv", index=False)
+sectors.sectors
 lowRisk = [0.0, 0.3]
 medRisk = [0.3, 0.7]
 highRisk = [0.7, 1.0]
@@ -11,7 +18,7 @@ selectedRisk = 0.4
 layout = html.Div(
     [
         navigation.navbar,
-        html.H2("Risk Apetite"),
+        html.H2("Select Portfolio Volatility"),
         dcc.Slider(
             0,
             1,
