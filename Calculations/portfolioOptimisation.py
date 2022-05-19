@@ -96,7 +96,8 @@ class OptimisePortfolio:
 
     def setRandomWeights(self, n: int) -> np.ndarray:
         """arg: n: int: number of tickers"""
-        w = np.random.random(n)
+        w = np.random.randint(0, 1000, n)
+        # w = np.random.random(n)
         return w / np.sum(w)
 
     def genRandomPortfolios(
@@ -141,7 +142,10 @@ class OptimisePortfolio:
             tickers.remove("index")
         except:
             print("dataset does not have redundant index column")
-        tickers.remove("Date")
+        try:
+            tickers.remove("Date")
+        except:
+            print("Date coloumn not found")
         tickers = self.removeNullCols(tickers)
         currentDay = datetime.now()
         lastYearToday = currentDay - relativedelta(years=self.period)
@@ -224,4 +228,4 @@ class OptimisePortfolio:
             bounds=bounds,
             constraints=constraits,
         )
-        return result["x"].round(4)
+        return result["x"]

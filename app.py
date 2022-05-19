@@ -20,9 +20,9 @@ layout_index = html.Div([navigation.navbar])
 @callback(Output("page-content", "children"), Input("url", "pathname"))
 def display_page(pathname):
     if pathname == "/stock-analysis":
-        return stock.layout
+        return None  # stock.layout
     elif pathname == "/portfolio-analysis":
-        return portfolio.layout
+        return None  # portfolio.layout
     elif pathname == "/":
         return layout_index
     elif pathname == "/portfolio-generation":
