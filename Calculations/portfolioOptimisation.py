@@ -96,7 +96,7 @@ class OptimisePortfolio:
 
     def setRandomWeights(self, n: int) -> np.ndarray:
         """arg: n: int: number of tickers"""
-        w = np.random.randint(0, 1000, n)
+        w = np.random.randint(0, 10000, n) + 0.0001
         # w = np.random.random(n)
         return w / np.sum(w)
 
@@ -184,7 +184,12 @@ class OptimisePortfolio:
         calcRisk = self.portfolioRisk(weights, covMatrix)
         return calcRisk - risk
 
-    def maximizePortfolioReturns(self, covMatrix, tickers, expectedAnnualReturns):
+    def maximizePortfolioReturns(
+        self, covMatrix, tickers, expectedAnnualReturns, risk=None
+    ):
+        if risk == None:
+            risk = self.risk
+
         if self.objectFunction == "Sharpe":
             objFun = self.portfolioSharpeRatioObjFun
             args = (expectedAnnualReturns, covMatrix)
@@ -200,14 +205,14 @@ class OptimisePortfolio:
                 {
                     "type": "ineq",
                     "fun": self.portfolioRiskRangeLBConstrait,
-                    "args": (covMatrix, self.risk),
+                    "args": (covMatrix, risk),
                 }
             )
             constraits.append(
                 {
                     "type": "ineq",
                     "fun": self.portfolioRiskRangeUBConstrait,
-                    "args": (covMatrix, self.risk),
+                    "args": (covMatrix, risk),
                 }
             )
         else:
@@ -215,11 +220,13 @@ class OptimisePortfolio:
                 {
                     "type": "eq",
                     "fun": self.portfolioRiskConstraint,
-                    "args": (covMatrix, self.risk),
+                    "args": (covMatrix, risk),
                 }
             )
         bounds = tuple((0, 1) for _ in range(len(tickers)))
-        initialWeights = self.setRandomWeights(len(tickers))
+        initialWeights = np.ones(len(tickers)) / len(
+            tickers
+        )  # self.setRandomWeights(len(tickers))
         result = minimize(
             fun=objFun,
             x0=initialWeights,
@@ -228,4 +235,5 @@ class OptimisePortfolio:
             bounds=bounds,
             constraints=constraits,
         )
+
         return result["x"]

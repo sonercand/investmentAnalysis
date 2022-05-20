@@ -5,6 +5,8 @@ import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
 import json
+from multiprocessing import Pool, Process, Manager
+import multiprocessing as mp
 
 """
 1) filter companies by sector
@@ -135,7 +137,7 @@ def plotGraph(n_clicks, sectors, riskValue, objFun, logReturns):
         pRiskS = op.portfolioRisk(optWeightsS, covMatrix)
         returns = []
         risks = []
-
+        """
         for k in range(10):
             riskA = k / 10
             op.useRiskRange = False
@@ -147,8 +149,10 @@ def plotGraph(n_clicks, sectors, riskValue, objFun, logReturns):
             pRisk = op.portfolioRisk(optWeights, covMatrix)
             returns.append(pr)
             risks.append(pRisk)
+        
+        """
         randomPortfolios = op.genRandomPortfolios(
-            expectedAnnualReturns, covMatrix, tickers, 20000
+            expectedAnnualReturns, covMatrix, tickers, 40000
         )
         traces = []
         traces.append(
@@ -162,7 +166,7 @@ def plotGraph(n_clicks, sectors, riskValue, objFun, logReturns):
                 "opacity": 0.5,
             }
         )
-        traces.append(
+        """traces.append(
             {
                 "x": risks,
                 "y": returns,
@@ -170,7 +174,7 @@ def plotGraph(n_clicks, sectors, riskValue, objFun, logReturns):
                 "color": "green",
                 "size": 14,
             }
-        )
+        )"""
         traces.append(
             {
                 "x": [pRiskS],
