@@ -24,14 +24,6 @@ def randomPortfolio(oP, n, expReturnsAnnual, covMatrix, return_dict):
     return return_dict
 
 
-def optWeights(oP, covMatrix, tickers, expectedAnnualReturns, results):
-    optWeightsS = oP.maximizePortfolioReturns(
-        covMatrix, tickers, expectedAnnualReturns, risk=0.1
-    )
-    results.append(optWeightsS)
-    return results
-
-
 if __name__ == "__main__":
     # run in sequence -----------
     t1 = time.time()
@@ -48,32 +40,33 @@ if __name__ == "__main__":
         objectFunction="Sharpe",
         useLogReturns=True,
     )
-
     dr, tickers, covMatrix = oP.processData()
     expectedAnnualReturns = oP.expectedAnnualReturns(dr)
-    optWeightsS = oP.maximizePortfolioReturns(
-        covMatrix, tickers, expectedAnnualReturns, risk=0.1
-    )
-    manager = Manager()
-    results = manager.list()
-    return_dict = manager.list()
-    optWeights(oP, covMatrix, tickers, expectedAnnualReturns, results)
-    args = (oP, covMatrix, tickers, expectedAnnualReturns, results)
-    p1 = Process(
-        target=optWeights,
-        args=args,
-    )
-    p2 = Process(
-        target=oP.genRandomPortfolios,
-        args=(expectedAnnualReturns, covMatrix, stocks0, 1000),
-    )
-    p1.start()
-    p2.start()
-    p1.terminate()
-    p2.terminate()
-    p1.join()
-    p2.join()
     t2 = time.time()
     print(t2 - t1)
     tnull = time.time()
-    print(results)
+    manager = Manager()
+    return_dict = manager.list()
+    n = len(stocks)
+    jobs = []
+    n_iter = 20
+    for k in range(n_iter):
+        p = Process(
+            target=randomPortfolio,
+            args=(oP, n - 1, expectedAnnualReturns, covMatrix, return_dict),
+        )
+        jobs.append(p)
+        p.start()
+
+    for proc in jobs:
+        proc.terminate()
+        # proc.join()
+
+    t3 = time.time()
+    print("it took to run algo {} times only {} seconds".format(n_iter, t3 - tnull))
+    # print(return_dict.values())
+    oP.genRandomPortfolios(expectedAnnualReturns, covMatrix, stocks0, n_iter)
+    t4 = time.time()
+    print()
+    # print(return_dict)
+    p.terminate()
