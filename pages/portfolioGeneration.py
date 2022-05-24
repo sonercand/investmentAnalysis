@@ -117,7 +117,8 @@ def plotGraph(n_clicks, sectors, riskValue, objFun, logReturns):
         data = pd.read_csv("./data/snpFtseClose.csv")
         # sectors = [sectors]
         stocks = [item for sublist in sectors for item in sublist]
-
+        stocks = set(stocks)
+        stocks = list(stocks)
         stocks.append("Date")
 
         data = data[stocks]
@@ -153,7 +154,7 @@ def plotGraph(n_clicks, sectors, riskValue, objFun, logReturns):
         
         """
         randomPortfolios = op.genRandomPortfolios(
-            expectedAnnualReturns, covMatrix, tickers, 40000
+            expectedAnnualReturns, covMatrix, tickers, 10000
         )
         traces = []
         traces.append(

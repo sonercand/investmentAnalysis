@@ -96,7 +96,7 @@ class OptimisePortfolio:
 
     def sortinoRatio(self, weights, dailyReturns):
         """Like sharpe Ratio except replaces positive changes with zero so that optimisation focuses on reducing the negative variance"""
-
+        dailyReturns = dailyReturns[self.tickers]
         downside = dailyReturns[dailyReturns < 0]
         d2 = downside * weights
         d3 = d2.sum(axis=1)
@@ -107,8 +107,8 @@ class OptimisePortfolio:
 
     def setRandomWeights(self, n: int) -> np.ndarray:
         """arg: n: int: number of tickers"""
-        w = np.random.randint(0, 10000, n) + 0.0001
-        # w = np.random.random(n)
+        # w = np.random.randint(0, 1000, n)
+        w = np.random.random(n)
         return w / np.sum(w)
 
     def genRandomPortfolios(
@@ -140,10 +140,14 @@ class OptimisePortfolio:
         return output
 
     def removeNullCols(self, tickers):
+        tickers = set(tickers)
+        tickers = list(tickers)
         for col in tickers:
+
             percent_missing = self.data[col].isnull().sum() * 100 / len(self.data[col])
-            if percent_missing > 70:  # remove ticks that have few data points
+            if percent_missing > 70.0:  # remove ticks that have few data points
                 tickers.remove(col)
+        self.tickers = tickers
         return tickers
 
     def processData(self):
