@@ -105,7 +105,7 @@ class OptimisePortfolio:
 
         return (252**0.5) * sum_ / d3.std()
 
-    def setRandomWeights(self, n: int) -> np.ndarray:
+    def setRandomWeights(self, n: int, numberOfIter=10000) -> np.ndarray:
         """arg: n: int: number of tickers"""
         # w = np.random.randint(0, 1000, n)
         w = np.random.random(n)
@@ -113,31 +113,26 @@ class OptimisePortfolio:
 
     def genRandomPortfolios(
         self,
-        expReturnsAnnual: pd.DataFrame,
-        covMatrix: pd.DataFrame,
         tickers: list,
+        dailyReturns: pd.DataFrame,
         n_iter=3000,
-    ) -> pd.DataFrame:
+    ):
         """generate random portfolios and their risk and return values"""
         results = []
         setRandomWeights = self.setRandomWeights
         k = 0
-        while k <= n_iter:
-            k += 1
-            weights = setRandomWeights(n=len(tickers))
-            portfolioReturn = self.portfolioReturns(
-                weights=weights, expReturnsAnnual=expReturnsAnnual
-            )
-            portRisk = self.portfolioRisk(weights=weights, covMatrix=covMatrix)
-            res = {
-                "weights": weights,
-                "returns": portfolioReturn,
-                "risk": portRisk,
-                "sharpeRatio": portfolioReturn / portRisk,
-            }
-            results.append(res)
-        output = pd.DataFrame(results)
-        return output
+        W = setRandomWeights(n=len(tickers), numberOfIter=10000)
+
+        w = np.matrix(W)
+        pReturnsAvg = np.dot(w, dailyReturns.mean()) * 252
+        pReturns = np.dot(w, dailyReturns.values.T)
+        pRisk = pReturns.std(axis=1) * np.sqrt(252)
+        pSharpe = pReturnsAvg / pRisk
+        return (
+            np.squeeze(np.asarray(pReturnsAvg)),
+            np.squeeze(np.asarray(pRisk)),
+            np.squeeze(np.asarray(pSharpe)),
+        )
 
     def removeNullCols(self, tickers):
         tickers = set(tickers)
