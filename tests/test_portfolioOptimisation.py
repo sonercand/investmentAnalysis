@@ -325,3 +325,37 @@ def test_plot():
         portRisk = op.portfolioRisk(weights=weights, covMatrix=covMatrix)
         plt.scatter(portRisk, portfolioReturn, color="red")
     plt.show()
+
+
+def test_sortinoRatio():
+    closeValuesLR = {
+        "A": [300, 200, 150, 200],  # log(A/A.shift(1)) = [NaN,1,2,3]
+        "B": [200, 150, 200, 50],  # [NaN,1,0,100]
+        "Date": [
+            datetime(2022, 1, 1),
+            datetime(2022, 1, 2),
+            datetime(2022, 1, 3),
+            datetime(2022, 1, 4),
+        ],
+    }
+    dataLR = pd.DataFrame(closeValuesLR)
+    op = OptimisePortfolio(
+        dataLR,
+        1,
+        risk=[0.2],
+        useLogReturns=True,
+        workDaysinYear=252,
+        objectFunction="Sharpe",
+    )
+    dr, tickers, covMatrix = op.processData()
+    covMatrix, downside = op.sortinoRatio(
+        dr, weights=[1.0 / 3, 1.0 / 3, 1.0 / 3], expReturnsAnnual=1
+    )
+    weights = [1.0 / 3, 1.0 / 3, 1.0 / 3]
+
+    downside.fillna(0, inplace=True)
+    print(downside)
+    print(dr)
+    print(downside.cov())
+    print(dr.cov())
+    assert 3 == 9

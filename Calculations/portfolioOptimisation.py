@@ -94,6 +94,17 @@ class OptimisePortfolio:
             weights=weights, expReturnsAnnual=expReturnsAnnual
         ) / self.portfolioRisk(weights, covMatrix)
 
+    def sortinoRatio(self, weights, dailyReturns):
+        """Like sharpe Ratio except replaces positive changes with zero so that optimisation focuses on reducing the negative variance"""
+
+        downside = dailyReturns[dailyReturns < 0]
+        d2 = downside * weights
+        d3 = d2.sum(axis=1)
+
+        sum_ = np.sum(dailyReturns.mean() * weights)
+
+        return (252**0.5) * sum_ / d3.std()
+
     def setRandomWeights(self, n: int) -> np.ndarray:
         """arg: n: int: number of tickers"""
         w = np.random.randint(0, 10000, n) + 0.0001
@@ -163,6 +174,9 @@ class OptimisePortfolio:
     def portfolioSharpeRatioObjFun(self, weights, expReturnsAnnual, covMatrix):
         return -1 * self.sharpeRatio(weights, expReturnsAnnual, covMatrix)
 
+    def portfolioSortinoRatioObjFun(self, weights, dailyReturns):
+        return -1 * self.sortinoRatio(weights, dailyReturns)
+
     def portfolioReturnsObjFun(self, weights, expReturnsAnnual):
         return -1 * self.portfolioReturns(weights, expReturnsAnnual)
 
@@ -185,7 +199,7 @@ class OptimisePortfolio:
         return calcRisk - risk
 
     def maximizePortfolioReturns(
-        self, covMatrix, tickers, expectedAnnualReturns, risk=None
+        self, covMatrix, tickers, expectedAnnualReturns, dailyReturns, risk=None
     ):
         if risk == None:
             risk = self.risk
@@ -196,6 +210,9 @@ class OptimisePortfolio:
         elif self.objectFunction == "Returns":
             objFun = self.portfolioReturnsObjFun
             args = expectedAnnualReturns
+        elif self.objectFunction == "Sortino":
+            objFun = self.portfolioSortinoRatioObjFun
+            args = dailyReturns
         else:
             print("Object function should be either Sharpe or Returns")
         constraits = []

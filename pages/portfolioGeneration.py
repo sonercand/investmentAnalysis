@@ -67,6 +67,7 @@ layout = html.Div(
                                             "label": "Portfolio Return Rate",
                                             "value": "Returns",
                                         },
+                                        {"label": "Sortino Ratio", "value": "Sortino"},
                                     ],
                                 ),
                                 html.H2("Select Return Calculation Method"),
@@ -131,7 +132,7 @@ def plotGraph(n_clicks, sectors, riskValue, objFun, logReturns):
         dr, tickers, covMatrix = op.processData()
         expectedAnnualReturns = op.expectedAnnualReturns(dr)
         optWeightsS = op.maximizePortfolioReturns(
-            covMatrix, tickers, expectedAnnualReturns
+            covMatrix, tickers, expectedAnnualReturns, dr
         )
         prS = op.portfolioReturns(optWeightsS, expectedAnnualReturns)
         pRiskS = op.portfolioRisk(optWeightsS, covMatrix)
