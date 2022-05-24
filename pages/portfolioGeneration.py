@@ -152,17 +152,17 @@ def plotGraph(n_clicks, sectors, riskValue, objFun, logReturns):
             risks.append(pRisk)
         
         """
-        randomPortfolios = op.genRandomPortfolios(
-            expectedAnnualReturns, covMatrix, tickers, 40000
+        pReturns, pRisk, pSharpe = op.genRandomPortfolios(
+            expectedAnnualReturns, covMatrix, tickers, 10
         )
         traces = []
         traces.append(
             {
-                "x": randomPortfolios.risk,
-                "y": randomPortfolios.returns,
+                "x": pRisk,
+                "y": pReturns,
                 "name": "Random Portfolios",
                 "mode": "markers",
-                "color": randomPortfolios.sharpeRatio,
+                "color": pSharpe,
                 "colorscale": "Rainbow",
                 "opacity": 0.5,
             }
