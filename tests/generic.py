@@ -32,10 +32,9 @@ from sklearn.model_selection import ParameterGrid
 W = []
 n_iter = 2
 k = 0
-while k <= n_iter:
-    k += 1
-    weights = op.setRandomWeights(n=len(tickers))
-    W.append(weights)
+
+W = np.random.randint(0, 10000, (100, len(tickers))) + 0.0001
+print(W)
 # print(W)
 
 w = np.matrix(W)
@@ -60,3 +59,5 @@ res = {
     "sharpeRatio": sharpe,
 }
 print(risk)
+pReturnsAvg, pRisk, pSharpe = op.genRandomPortfolios(tickers, dr, 10)
+print(np.squeeze(np.asarray(pReturnsAvg)))

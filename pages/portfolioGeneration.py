@@ -152,9 +152,7 @@ def plotGraph(n_clicks, sectors, riskValue, objFun, logReturns):
             risks.append(pRisk)
         
         """
-        pReturns, pRisk, pSharpe = op.genRandomPortfolios(
-            expectedAnnualReturns, covMatrix, tickers, 10
-        )
+        pReturns, pRisk, pSharpe = op.genRandomPortfolios(tickers, dr, 10000)
         traces = []
         traces.append(
             {

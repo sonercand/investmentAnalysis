@@ -105,10 +105,11 @@ class OptimisePortfolio:
 
         return (252**0.5) * sum_ / d3.std()
 
-    def setRandomWeights(self, n: int) -> np.ndarray:
+    def setRandomWeights(self, n: int, numberOfIter=10000) -> np.ndarray:
         """arg: n: int: number of tickers"""
         w = np.random.randint(0, 10000, n) + 0.0001
         # w = np.random.random(n)
+        w = np.random.randint(0, 10000, (numberOfIter, n)) + 0.0001
         return w / np.sum(w)
 
     def genRandomPortfolios(
@@ -121,17 +122,18 @@ class OptimisePortfolio:
         results = []
         setRandomWeights = self.setRandomWeights
         k = 0
-        W = []
-        while k <= n_iter:
-            k += 1
-            weights = setRandomWeights(n=len(tickers))
-            W.append(weights)
+        W = setRandomWeights(n=len(tickers), numberOfIter=10000)
+
         w = np.matrix(W)
-        pReturnsAvg = np.dot(w, dailyReturns.mean())
+        pReturnsAvg = np.dot(w, dailyReturns.mean()) * 252
         pReturns = np.dot(w, dailyReturns.values.T)
         pRisk = pReturns.std(axis=1) * np.sqrt(252)
         pSharpe = pReturnsAvg / pRisk
-        return pReturnsAvg, pRisk, pSharpe
+        return (
+            np.squeeze(np.asarray(pReturnsAvg)),
+            np.squeeze(np.asarray(pRisk)),
+            np.squeeze(np.asarray(pSharpe)),
+        )
 
     def removeNullCols(self, tickers):
         for col in tickers:
