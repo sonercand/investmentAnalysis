@@ -1,9 +1,10 @@
 from cmath import exp
+from tkinter import W
 import pandas as pd
 import json
 from Calculations.portfolioOptimisation import OptimisePortfolio
 from multiprocessing import Pool, Process
-
+import numpy as np
 
 riskRange = [0, 0.4]
 data = pd.read_csv("./data/snpFtseClose.csv")
@@ -22,12 +23,25 @@ op = OptimisePortfolio(
     useLogReturns=True,
 )
 dr, tickers, covMatrix = op.processData()
-downside = dr[dr > 0]
-weights = [0.25, 0.25, 0.25, 0.25]
+
+weightRange = [k for k in range(10)]
+print(weightRange)
+weights = []
+from sklearn.model_selection import ParameterGrid
+
+W = []
+n_iter = 100000
+k = 0
+while k <= n_iter:
+    k += 1
+    weights = op.setRandomWeights(n=len(tickers))
+    W.append(weights)
+# print(W)
+
+w = np.matrix(W)
+print(w.shape, dr.mean().shape)
+pReturnsAvg = np.dot(dr.mean(), w.T)
 print(dr.head())
-d2 = downside * weights
-d3 = d2.sum(axis=1)
-print(dr.std())
-print(d3.std())
-print(d3.head())
-print((252**0.5) * d3.mean() / d3.std())
+returns = np.dot(dr, w.T)
+risk = returns.std(axis=1) * np.sqrt(252)
+print(risk[risk > 0.2])
