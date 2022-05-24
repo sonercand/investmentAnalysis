@@ -159,7 +159,7 @@ def plotGraph(n_clicks, sectors, riskValue, objFun, logReturns):
         traces = []
         traces.append(
             {
-                "x": randomPortfolios.risks,
+                "x": randomPortfolios.risk,
                 "y": randomPortfolios.returns,
                 "name": "Random Portfolios",
                 "mode": "markers",

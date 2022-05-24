@@ -113,26 +113,31 @@ class OptimisePortfolio:
 
     def genRandomPortfolios(
         self,
+        expReturnsAnnual: pd.DataFrame,
+        covMatrix: pd.DataFrame,
         tickers: list,
-        dailyReturns: pd.DataFrame,
         n_iter=3000,
-    ):
+    ) -> pd.DataFrame:
         """generate random portfolios and their risk and return values"""
         results = []
         setRandomWeights = self.setRandomWeights
         k = 0
-        W = setRandomWeights(n=len(tickers), numberOfIter=10000)
-
-        w = np.matrix(W)
-        pReturnsAvg = np.dot(w, dailyReturns.mean()) * 252
-        pReturns = np.dot(w, dailyReturns.values.T)
-        pRisk = pReturns.std(axis=1) * np.sqrt(252)
-        pSharpe = pReturnsAvg / pRisk
-        return (
-            np.squeeze(np.asarray(pReturnsAvg)),
-            np.squeeze(np.asarray(pRisk)),
-            np.squeeze(np.asarray(pSharpe)),
-        )
+        while k <= n_iter:
+            k += 1
+            weights = setRandomWeights(n=len(tickers))
+            portfolioReturn = self.portfolioReturns(
+                weights=weights, expReturnsAnnual=expReturnsAnnual
+            )
+            portRisk = self.portfolioRisk(weights=weights, covMatrix=covMatrix)
+            res = {
+                "weights": weights,
+                "returns": portfolioReturn,
+                "risk": portRisk,
+                "sharpeRatio": portfolioReturn / portRisk,
+            }
+            results.append(res)
+        output = pd.DataFrame(results)
+        return output
 
     def removeNullCols(self, tickers):
         tickers = set(tickers)
