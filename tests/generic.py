@@ -15,49 +15,9 @@ stocks = [item for sublist in sectors for item in sublist]
 
 stocks.append("Date")
 data = data[stocks]
-op = OptimisePortfolio(
-    data=data,
-    period=3,
-    risk=riskRange,
-    objectFunction="Sharpe",
-    useLogReturns=True,
-)
-dr, tickers, covMatrix = op.processData()
+from Calculations.portfolioAnalytics import getName
 
-weightRange = [k for k in range(10)]
-print(weightRange)
-weights = []
-from sklearn.model_selection import ParameterGrid
-
-W = []
-n_iter = 2
-k = 0
-
-W = np.random.randint(0, 10000, (100, len(tickers))) + 0.0001
-print(W)
-# print(W)
-
-w = np.matrix(W)
-print(w.shape, dr.mean().shape)
-pReturnsAvg = np.dot(w, dr.mean())
-print(dr.head())
-print(dr.mean())
-returns = np.dot(w, dr.values.T)
-risk = returns.std(axis=1) * np.sqrt(252)
-print(risk[risk > 0.2])
-print(pReturnsAvg)
-print(w[0])
-print(op.portfolioReturns(W[0], dr.mean()))
-print(op.portfolioRisk(W[1], covMatrix=covMatrix))
-print(risk[1])
-sharpe = returns / risk
-print(sharpe)
-res = {
-    "weights": w,
-    "returns": returns,
-    "risk": risk,
-    "sharpeRatio": sharpe,
-}
-print(risk)
-pReturnsAvg, pRisk, pSharpe = op.genRandomPortfolios(tickers, dr, 10)
-print(np.squeeze(np.asarray(pReturnsAvg)))
+sectors = ["BATS.L", "IMB.L", "MO", "PM"]
+for stock in sectors:
+    print(stock)
+    print(getName(stock))

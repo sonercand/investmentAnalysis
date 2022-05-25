@@ -8,6 +8,10 @@ def getData(tickers, period):
     return data.history(period=period)["Close"]
 
 
+def getName(ticker):
+    return yf.Ticker(ticker).info["longName"]
+
+
 def getDailyReturns(dataFrame):
     dr = dataFrame.pct_change(1)
     dr.dropna(inplace=True)
