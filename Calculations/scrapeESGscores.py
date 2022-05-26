@@ -96,6 +96,40 @@ while len(remaining) > 0:
         ticker = "AmerisourceBergen"
     elif ticker.upper() == "ALK":
         ticker = "Alaska Air Group"
+    elif ticker.upper() == "SKG.L":
+        ticker = "Smurfit Kappa"
+    elif ticker.upper() == "F":
+        ticker = "Ford"
+    elif ticker.upper() == "GOOG":
+        ticker = "Alphabet"
+    elif ticker.upper() == "L":
+        ticker = "Loews Corporation"
+    elif ticker.upper() == "TT":
+        ticker = "Trane Technologies"
+    elif ticker.upper() == "NEM":
+        ticker = "Newmont"
+    elif ticker.upper() == "K":
+        ticker = "Kellogg"
+    elif ticker.upper() == "J":
+        ticker = "Jacobs"
+    elif ticker.upper() == "V":
+        ticker = "Visa"
+    elif ticker.upper() == "AMCR":
+        ticker = "Amcor"
+    elif ticker.upper() == "O":
+        ticker = "Realty Income Corporation"
+    elif ticker.upper() == "WAT":
+        ticker = "Waters"
+    elif ticker.upper() == "NG":
+        ticker = "National Grid plc"
+    elif ticker.upper() == "BRK.B" or ticker.upper() == "BRK.A":
+        ticker = "Berkshire Hathaway"
+    elif ticker.upper() == "MRNA":
+        ticker = "Moderna"
+    elif ticker.upper() == "D":
+        ticker = "Dominion Energy"
+    elif ticker.upper() == "C":
+        ticker = "Citigroup"
     print(ticker)
     print(k)
     try:
@@ -104,11 +138,11 @@ while len(remaining) > 0:
             searchResultsListID="#ui-id-1",
             searchURL="https://www.msci.com/research-and-insights/esg-ratings-corporate-search-tool",
             ticker=ticker,
-            delay=1,
+            delay=2,
         )
     except:
         tickers_not_found.append(ticker0)
-        continue
+        rate = "bbb"
     print(rate)
     if rate == "ea":
         rate = "a"
@@ -119,4 +153,7 @@ while len(remaining) > 0:
         dfT = pd.DataFrame(rates)
         dfT.to_csv("./data/esg_ratings_raw.csv", index=False, mode="a", header=False)
         rates = []
+    elif k == len(remaining):
+        dfT = pd.DataFrame(rates)
+        dfT.to_csv("./data/esg_ratings_raw.csv", index=False, mode="a", header=False)
     print(tickers_not_found)
