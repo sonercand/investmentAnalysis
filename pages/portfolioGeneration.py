@@ -115,13 +115,18 @@ def plotGraph(n_clicks, sectors, riskValue, objFun, logReturns):
         else:
             useLogReturns = False
         data = pd.read_csv("./data/snpFtseClose.csv")
+        print("columns of the original data: {}".format(data.columns))
+        esgData = pd.read_csv("./data/esgScores_aligned.csv")
         # sectors = [sectors]
         stocks = [item for sublist in sectors for item in sublist]
         stocks = set(stocks)
         stocks = list(stocks)
+        print(stocks)
+        esgData = esgData[stocks]
         stocks.append("Date")
-
+        print(stocks)
         data = data[stocks]
+        print(data)
 
         op = OptimisePortfolio(
             data=data,
@@ -131,6 +136,8 @@ def plotGraph(n_clicks, sectors, riskValue, objFun, logReturns):
             useLogReturns=useLogReturns,
         )
         dr, tickers, covMatrix = op.processData()
+        print("this is dr")
+        print(dr.head())
         expectedAnnualReturns = op.expectedAnnualReturns(dr)
         optWeightsS = op.maximizePortfolioReturns(
             covMatrix, tickers, expectedAnnualReturns, dr
@@ -211,5 +218,14 @@ def plotGraph(n_clicks, sectors, riskValue, objFun, logReturns):
 
         table_body = [html.Tbody(rows)]
         table = dbc.Table(table_header + table_body, bordered=True)
-        output = dbc.Row([dbc.Col([graph]), dbc.Col([table])])
+
+        # get portfolio esg score:
+        stocks = list(op.data.columns)
+
+        print(esgData)
+        esgData = esgData[stocks]
+        print(optWeightsS.shape, esgData.shape)
+        esgScore = op.portfolioESGscore(weights=optWeightsS, esgData=esgData)
+        esgResult = html.P("ESG SCORE : {}".format(esgScore))
+        output = dbc.Row([dbc.Col([graph]), esgResult, dbc.Col([table])])
         return output

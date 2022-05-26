@@ -8,16 +8,13 @@ import numpy as np
 
 riskRange = [0, 0.4]
 data = pd.read_csv("./data/snpFtseClose.csv")
-
-sectors = ["BATS.L", "IMB.L", "MO", "PM"]
-sectors = [sectors]
-stocks = [item for sublist in sectors for item in sublist]
-
-stocks.append("Date")
-data = data[stocks]
-from Calculations.portfolioAnalytics import getName
-
-sectors = ["BATS.L", "IMB.L", "MO", "PM"]
-for stock in sectors:
-    print(stock)
-    print(getName(stock))
+print(data.shape)
+data = data.drop(columns=["Unnamed: 0.1", "Unnamed: 0"], axis=1)
+data = data.dropna(axis=1, how="all")
+print(data)
+print(data.columns)
+data.to_csv("./data/snpFtseClose.csv", index=False)
+# data["Date"] = pd.to_datetime(data["Date"])
+# data.set_index("Date", inplace=True)
+# data.sort_index(inplace=True)
+# data.rename(columns={"Unnamed: 0": "Date"}, inplace=True)

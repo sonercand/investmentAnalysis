@@ -1,6 +1,6 @@
 from tokenize import Ignore
 import yfinance as yf
-from portfolioAnalytics import getData
+from Calculations.portfolioAnalytics import getData
 import pandas as pd
 
 fComp = pd.read_csv("./data/ftse100components.csv")
@@ -9,12 +9,38 @@ sComp = pd.read_csv("./data/snp500components.csv")
 tickers = []
 tickers = list(fComp["symbol"]) + list(sComp["Symbol"])
 
+
+# data = getData(tickers, period="5y")
+# data.to_csv("./data/snpFtseClose.csv", index=True)
+
+# save adj close data for the tickers
+"""
+dfs = []
+for ticker in tickers:
+    new_df = pd.DataFrame()
+    try:
+        data = yf.download(ticker, "2017-05-26", "2022-05-25")
+        data = data["Adj Close"]
+        new_df[ticker] = data
+
+        dfs.append(new_df)
+    except Exception as e:
+        print(e)
+        print(ticker)
+new_df = pd.concat(dfs, axis=1)
+
+new_df.to_csv("./data/snpFtseClose.csv", index=True)
+"""
+actual_stocks = list(pd.read_csv("./data/snpFtseClose.csv").columns)
+actual_stocks.remove("Date")
+# saving complete.............
 sectorsF = fComp[["sector", "symbol"]]
 
 sectorsS = sComp[["GICS Sub-Industry", "Symbol"]]
 
 sectorsS.columns = ["sector", "symbol"]
 df = pd.concat([sectorsF, sectorsS], ignore_index=True)
+df = df[df.symbol.isin(actual_stocks)]
 df.to_csv("./data/sectors.csv", index=False)
 sectors = df.sector.unique()
 financial_services = []
@@ -97,9 +123,6 @@ sector_dict = {
     "Chemicals": chemicals,
     "rest": rest,
 }
-period = "5y"
-data = getData(tickers, period)
-data.to_csv("./data/snpFtseClose.csv", index=True)
 
 
 sectors_stock = {}

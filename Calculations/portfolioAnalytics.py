@@ -4,8 +4,10 @@ import pandas as pd
 
 
 def getData(tickers, period):
+    print(tickers)
     data = yf.Tickers(tickers)
-    return data.history(period=period)["Close"]
+    history = data.history(period=period)
+    return history["Adj Close"]
 
 
 def getName(ticker):

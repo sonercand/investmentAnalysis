@@ -48,7 +48,14 @@ class OptimisePortfolio:
         workDaysinYear=252,
         objectFunction="Sharpe",
     ):
+        print("class init function")
+        data["Date"] = pd.to_datetime(data["Date"])
+        print("Date column conv to datetime")
+        data.set_index("Date", inplace=True)
+        data.sort_index(inplace=True)
+        print("dataset sorted")
         self.data = data
+        print("dataset set")
         self.period = period
         self.workDaysinYear = workDaysinYear
         self.useLogReturns = useLogReturns
@@ -83,6 +90,12 @@ class OptimisePortfolio:
             return stdPortAnnual
         except Exception as e:
             print(e, varPort, weights)
+
+    def portfolioESGscore(
+        self, weights, esgData=pd.read_csv("./data/esgScores_aligned.csv")
+    ):
+
+        return np.dot(esgData, weights)[0]
 
     def sharpeRatio(
         self,
@@ -142,16 +155,17 @@ class OptimisePortfolio:
     def removeNullCols(self, tickers):
         tickers = set(tickers)
         tickers = list(tickers)
-        for col in tickers:
+        """for col in tickers:
 
             percent_missing = self.data[col].isnull().sum() * 100 / len(self.data[col])
             if percent_missing > 70.0:  # remove ticks that have few data points
-                tickers.remove(col)
+                tickers.remove(col)"""
         self.tickers = tickers
         return tickers
 
     def processData(self):
         """returns dr, tickers,covMatrix"""
+
         tickers = list(self.data.columns)
         try:
             tickers.remove("index")
@@ -165,8 +179,8 @@ class OptimisePortfolio:
         currentDay = datetime.now()
         lastYearToday = currentDay - relativedelta(years=self.period)
         data = self.data[
-            (pd.to_datetime(self.data["Date"]) > lastYearToday)
-            & (pd.to_datetime(self.data["Date"]) < currentDay)
+            (pd.to_datetime(self.data.index) > lastYearToday)
+            & (pd.to_datetime(self.data.index) < currentDay)
         ][tickers]
         if self.useLogReturns:
             dr = self.calculateLogReturn(data[tickers])  # log returns daily
