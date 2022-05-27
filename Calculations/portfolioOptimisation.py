@@ -204,6 +204,11 @@ class OptimisePortfolio:
             "fun": lambda x: np.sum(x) - 1,
         }
 
+    def portfolioESGConstrait(self, weights, esgScore, esgData):
+        """constrait: esgValue of Portfolio should be larger than the esgScore set by user"""
+        esgValue = self.portfolioESGscore(weights=weights, esgData=esgData)
+        return esgValue - esgScore
+
     def portfolioRiskRangeLBConstrait(self, weights, covMatrix, risk):
         min_ = self.risk[0]
         return self.portfolioRisk(weights, covMatrix) - min_
@@ -217,7 +222,14 @@ class OptimisePortfolio:
         return calcRisk - risk
 
     def maximizePortfolioReturns(
-        self, covMatrix, tickers, expectedAnnualReturns, dailyReturns, risk=None
+        self,
+        covMatrix,
+        tickers,
+        expectedAnnualReturns,
+        dailyReturns,
+        risk=None,
+        esgScore=None,
+        esgData=None,
     ):
         if risk == None:
             risk = self.risk
@@ -235,6 +247,14 @@ class OptimisePortfolio:
             print("Object function should be either Sharpe or Returns")
         constraits = []
         constraits.append(self.sumofWeightsConstrait())
+        if esgScore != None:
+            constraits.append(
+                {
+                    "type": "ineq",
+                    "fun": self.portfolioESGConstrait,
+                    "args": (esgScore, esgData),
+                }
+            )
         if self.useRiskRange:
             constraits.append(
                 {

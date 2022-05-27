@@ -54,6 +54,19 @@ layout = html.Div(
                                         "always_visible": True,
                                     },
                                 ),
+                                html.H2("Select ESG Score"),
+                                dcc.Slider(
+                                    1,
+                                    7,
+                                    0.1,
+                                    value=5,
+                                    id="esgSlider",
+                                    marks=None,
+                                    tooltip={
+                                        "placement": "bottom",
+                                        "always_visible": True,
+                                    },
+                                ),
                             ]
                         ),
                         dbc.Col(
@@ -105,9 +118,10 @@ layout = html.Div(
         State("riskSlider", "value"),
         State("objfunction", "value"),
         State("logReturns", "value"),
+        State("esgSlider", "value"),
     ],
 )
-def plotGraph(n_clicks, sectors, riskValue, objFun, logReturns):
+def plotGraph(n_clicks, sectors, riskValue, objFun, logReturns, esgScore):
     if n_clicks > 0:
         # riskRange = [0, riskValue]
         if logReturns == "logReturns":
@@ -140,7 +154,12 @@ def plotGraph(n_clicks, sectors, riskValue, objFun, logReturns):
         print(dr.head())
         expectedAnnualReturns = op.expectedAnnualReturns(dr)
         optWeightsS = op.maximizePortfolioReturns(
-            covMatrix, tickers, expectedAnnualReturns, dr
+            covMatrix,
+            tickers,
+            expectedAnnualReturns,
+            dr,
+            esgScore=esgScore,
+            esgData=esgData,
         )
         prS = op.portfolioReturns(optWeightsS, expectedAnnualReturns)
         pRiskS = op.portfolioRisk(optWeightsS, covMatrix)
