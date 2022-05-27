@@ -1,12 +1,12 @@
 from dash import Dash, dcc, html, Input, Output, callback
-from pages import navigation, portfolioGeneration  # ,stock,portfolio
+from pages import navigation, uitest  # portfolioGeneration,stock,portfolio
 import dash_bootstrap_components as dbc
 
 
 app = Dash(
     __name__,
     suppress_callback_exceptions=True,
-    external_stylesheets=[dbc.themes.BOOTSTRAP],
+    external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME],
 )
 server = app.server
 
@@ -26,7 +26,9 @@ def display_page(pathname):
     elif pathname == "/":
         return layout_index
     elif pathname == "/portfolio-generation":
-        return portfolioGeneration.layout
+        return None  # portfolioGeneration.layout
+    elif pathname == "/uitest":
+        return uitest.layout
     else:
         return "404"
 
