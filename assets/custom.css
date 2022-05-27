@@ -7,13 +7,17 @@
 }
 
 .toast {
-    height: 450px;
+    height: 480px;
     box-shadow: none;
 }
 
 #goalButton,
 #durationBack,
-#durationNext {
+#durationNext,
+#durationBack2,
+#durationBack3,
+#durationNext2,
+#durationNext3 {
     width: 50%;
     border-radius: 0;
     background: rgb(73, 144, 194) !important;
