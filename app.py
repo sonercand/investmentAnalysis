@@ -1,5 +1,5 @@
 from dash import Dash, dcc, html, Input, Output, callback
-from pages import navigation, uitest, portfolioGeneration, ui  # , stock, portfolio
+from pages import navigation, portfolioGeneration, ui  # , stock, portfolio,uitest
 import dash_bootstrap_components as dbc
 
 

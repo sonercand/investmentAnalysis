@@ -1,4 +1,4 @@
-from telnetlib import NAOVTD
+"""
 from dash import dash, dcc, html, Input, Output, State, callback, callback_context
 import dash_bootstrap_components as dbc
 from pages import navigation
@@ -237,3 +237,4 @@ def calcPortfolioStats(stockList, textValue, n_clicks):
             style={"marginTop": "1em"},
         )
         return [table, table2, graph]
+"""
