@@ -82,9 +82,9 @@ secondPage = [
                     dbc.Row(
                         [
                             dcc.Slider(
-                                1,
+                                0,
                                 50,
-                                1,
+                                5,
                                 value=5,
                                 id="numofYearsToInvest",
                                 marks=None,
@@ -254,14 +254,18 @@ layout = html.Div(
         html.Div(
             [
                 dbc.Button(
-                    "Start New Portfolio",
+                    "Create a  New Portfolio",
                     id="start",
                     n_clicks=0,
-                    class_name="fa-solid fa-circle-play",
                     color=color1,
+                    style={
+                        "background-color": color1,
+                        "fontSize": "2em",
+                        "color": "white",
+                    },
                 ),
             ],
-            style={"margin": "0 auto", "padding": "10em"},
+            style={"margin": "0 auto", "padding": "15em", "textAlign": "center"},
         ),
         dbc.Modal(
             [firstPage],

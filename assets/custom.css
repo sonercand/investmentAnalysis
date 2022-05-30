@@ -11,15 +11,17 @@
     box-shadow: none;
 }
 
-#goalButton,
-#durationBack,
-#durationNext,
-#durationBack2,
-#durationBack3,
-#durationNext2,
-#durationNext3 {
+#f1,
+#f2,
+#b2,
+#b3,
+#f3 {
     width: 50%;
     border-radius: 0;
     background: rgb(73, 144, 194) !important;
     margin-bottom: 2em
+}
+
+#None {
+    display: none;
 }

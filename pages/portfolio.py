@@ -104,9 +104,12 @@ layout = html.Div(
 def plotStocks(stockList, n_clicks):
     if n_clicks > 0:
         widgets = []
+        print("start plotStocks")
         data = getData(stockList, "1y")
+        print("finish get data")
         traces = []
         traces2 = []
+        print(data.columns)
         for col in data.columns:
             traces.append(
                 {
