@@ -1,11 +1,14 @@
-from turtle import back
+from turtle import back, bgcolor
 from dash import dash, dcc, html, Input, Output, State, callback, callback_context
+from matplotlib.pyplot import fill, text
 from pages import navigation
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
 from Calculations.portfolioOptimisation import OptimisePortfolio
 import json
+import numpy as np
+import yfinance as yf
 
 # styling params ##############################################
 color1 = "#4990C2"
@@ -479,16 +482,124 @@ def optimise(
         )
         prS = op.portfolioReturns(optWeightsS, expectedAnnualReturns)
         pRiskS = op.portfolioRisk(optWeightsS, covMatrix)
+        # calculate expected returns for the user selected time frame
+        expectedReturns = []
+        worstReturns = []
+        expectedRisks = []
+        bestReturns = []
+        years = []
+        lower_ = []
+        higher_ = []
+        yearEndAmount = investmentAmount
+        worstAmount = investmentAmount
+        bestAmount = investmentAmount
+        for y_ in range(howLong + 1):
+            years.append(y_)
+            lower_.append(investmentAmount)
+            higher_.append(targetAmount)
+            expectedReturns.append(yearEndAmount)
+            worstReturns.append(worstAmount)
+            bestReturns.append(bestAmount)
+            yearEndAmount = (prS + 1) * yearEndAmount
+            worstAmount = (prS + 1 - pRiskS) * worstAmount
+            bestAmount = (
+                prS + 1 + pRiskS / 2
+            ) * bestAmount  # it explodes exponantially
+        import plotly.graph_objects as go
+
+        fig = go.Figure()
+        fig.add_trace(
+            go.Scatter(
+                x=years,
+                y=expectedReturns,
+                fill="tozeroy",
+                mode="lines+markers",
+                line_color="blue",
+                fillcolor="rgba(171, 226, 251,0.3)",
+                name="Expected Saving Amount",
+            )
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=years,
+                y=worstReturns,
+                fill="tozeroy",
+                mode="lines+markers",
+                line_color="rgba(242, 75, 108,1)",
+                fillcolor="rgba(255,255,255,1)",
+                name="Worst Case",
+            )
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=years,
+                y=bestReturns,
+                fill="tonexty",
+                mode="lines+markers",
+                line_color="rgba(10, 219, 122,1)",
+                fillcolor="rgba(10, 219, 122,0.1)",
+                name="Best Possible case",
+            )
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=years,
+                y=lower_,
+                line=dict(color="red", width=1, dash="dash"),
+                fill=None,
+                mode="lines",
+                fillcolor="rgba(242, 75, 108,0.3)",
+                name="Starting Amount",
+            )
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=years,
+                y=higher_,
+                line=dict(color="#333", width=1, dash="dash"),
+                fill=None,
+                mode="lines",
+                name="Target Amount",
+            )
+        )
+        fig.update_layout(
+            title="Expected Amount Saved vs Years",
+            xaxis_title="Years",
+            yaxis_title="Growth(GBP)",
+            plot_bgcolor="white",
+            hovermode="x unified",
+        )
+        returnsGraph = dcc.Graph(
+            figure=fig,
+            id="ports",
+            animate=True,
+        )
+
         list_ = list(zip(tickers, optWeightsS.round(7)))
 
         def take2(element):
             return element[1]
 
         list_.sort(key=take2, reverse=True)
-        table_header = [html.Thead(html.Tr([html.Th("Stock"), html.Th("Weight")]))]
+        table_header = [
+            html.Thead(
+                html.Tr([html.Th("Stock"), html.Th("Weight"), html.Th("Amount(GBP)")])
+            )
+        ]
         rows = []
+        stockWeightDict = {}
         for s, w in list_:
-            rows.append(html.Tr([html.Td(s), html.Td(str(w))]))
+            if w > 0:
+                stockWeightDict[s] = w
+                rows.append(
+                    html.Tr(
+                        [
+                            html.Td(s),
+                            html.Td(str(w)),
+                            html.Td(str((w * investmentAmount).round(2))),
+                        ]
+                    )
+                )
 
         table_body = [html.Tbody(rows)]
         table = dbc.Table(table_header + table_body, bordered=True)
@@ -502,8 +613,105 @@ def optimise(
                 riskRange, esgScore, portFolioExpectedReturns, portFolioExpectedRisk
             )
         )
-        output = dbc.Row([selectedValues, esgResult, col1])
-        return [output]
+
+        # Historical Performances######################
+        def transform(df):
+            df = (df.pct_change(1) + 1).cumprod()
+            df.dropna(inplace=True)
+            return df
+
+        # calc portfolios historic cumilative returns
+        stocks_and_date = list(stockWeightDict.keys())
+        dataPort = op.data[stocks_and_date]
+        cum_res = (dataPort.pct_change(1) + 1).cumprod()
+        cum_res.dropna(inplace=True)
+        array_ = []
+        for k, v in stockWeightDict.items():
+            ll = np.ones(len(cum_res[k])) * v
+            array_.append(cum_res[k] * ll)
+        res = pd.concat(array_, axis=1)
+        portCumRet = res.sum(axis=1, skipna=True)
+        min_date = portCumRet.index.min()
+        cum_res = (dataPort[dataPort.index >= min_date].pct_change(1) + 1).cumprod()
+        cum_res.dropna(inplace=True)
+        array_ = []
+        for k, v in stockWeightDict.items():
+            ll = np.ones(len(cum_res[k])) * v
+            array_.append(cum_res[k] * ll)
+        res = pd.concat(array_, axis=1)
+        portCumRet = res.sum(axis=1, skipna=True)
+        # ftse 100
+        print("start FTSE")
+        ftseData = yf.download("^FTSE", "2017-05-26", "2022-05-25")
+        ftseData = ftseData["Adj Close"]
+        ftseData = ftseData[ftseData.index >= min_date]
+        ftseCumRet = transform(ftseData)
+        # snp500
+        print("start SNP")
+        snpData = yf.download("^GSPC", "2017-05-26", "2022-05-25")
+        snpData = snpData["Adj Close"]
+        snpData = snpData[snpData.index >= min_date]
+        snpCumRet = transform(snpData)
+        print(portCumRet.index.min())
+        snpCumRet = snpCumRet[snpCumRet.index >= portCumRet.index.min()]
+        print(portCumRet.shape, snpCumRet.shape, ftseCumRet.shape)
+        traces = []
+        traces.append(
+            {
+                "x": snpCumRet.index,
+                "y": snpCumRet,
+                "name": "S&P 500",
+                "mode": "lines",
+                "line": dict(color="#bfc1c1"),
+                "line_color": "rgb(90, 91, 91)",
+            }
+        )
+        traces.append(
+            {
+                "x": ftseCumRet.index,
+                "y": ftseCumRet,
+                "name": "FTSE 100",
+                "mode": "lines",
+                "line": dict(color="#6c7070"),
+                "line_color": "rgb(90, 91, 91)",
+            }
+        )
+        traces.append(
+            {
+                "x": portCumRet.index,
+                "y": portCumRet,
+                "name": "Selected Portfolio",
+                "mode": "lines",
+                "line_color": "blue",
+            }
+        )
+        graphHist = dcc.Graph(
+            figure={
+                "data": traces,
+                "layout": {
+                    "title": "Historical Performance",
+                    "xaxis": {"title": "Date"},
+                    "yaxis": {"title": "Returns"},
+                },
+            },
+            id="ports",
+            animate=True,
+        )
+        returnGraphContainer = dbc.Col([returnsGraph], width=6)
+        graphHistContainer = dbc.Col([graphHist], width=6)
+        output = [
+            navigation.navbar,
+            dbc.Row(
+                [
+                    returnGraphContainer,
+                    graphHistContainer,
+                    selectedValues,
+                    esgResult,
+                    col1,
+                ]
+            ),
+        ]
+        return output
 
 
 @callback(
