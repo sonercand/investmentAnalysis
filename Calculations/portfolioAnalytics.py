@@ -7,7 +7,7 @@ def getData(tickers, period):
     print(tickers)
     data = yf.Tickers(tickers)
     history = data.history(period=period)
-    return history["Adj Close"]
+    return history["Close"]  # cannot retrieve Adj Close a bug in yfinance
 
 
 def getName(ticker):

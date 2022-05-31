@@ -1,4 +1,4 @@
-from telnetlib import NAOVTD
+"""
 from dash import dash, dcc, html, Input, Output, State, callback, callback_context
 import dash_bootstrap_components as dbc
 from pages import navigation
@@ -104,9 +104,12 @@ layout = html.Div(
 def plotStocks(stockList, n_clicks):
     if n_clicks > 0:
         widgets = []
+        print("start plotStocks")
         data = getData(stockList, "1y")
+        print("finish get data")
         traces = []
         traces2 = []
+        print(data.columns)
         for col in data.columns:
             traces.append(
                 {
@@ -234,3 +237,4 @@ def calcPortfolioStats(stockList, textValue, n_clicks):
             style={"marginTop": "1em"},
         )
         return [table, table2, graph]
+"""

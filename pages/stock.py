@@ -1,3 +1,4 @@
+"""
 from dash import Dash, dcc, html, Input, Output, State, callback
 import dash_bootstrap_components as dbc
 from utils import StockMarketInformation as SMI, getExchanges
@@ -349,3 +350,4 @@ def update_graph(stock_ticker, n_clicks):
             createStockVsMarketWidget(beta, expectedReturn, id="stockVsMarketVidget"),
             createVolatilityWidget(tic),
         ]
+"""
