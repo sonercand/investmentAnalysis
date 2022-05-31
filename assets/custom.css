@@ -1,6 +1,85 @@
 .nav-tabs .nav-link {
-    color: white!important;
+    color: white !important;
 }
+
 .nav-tabs .nav-link.active {
-    color:rgb(73, 144, 194)!important;
+    color: rgb(73, 144, 194) !important;
+}
+
+.toast {
+    height: 600px;
+    box-shadow: none;
+}
+
+#f1,
+#f2,
+#b2,
+#b3,
+#f3,
+#b4,
+#f4,
+#b5,
+#f5 {
+    width: 50%;
+    border-radius: 0;
+    background: rgb(73, 144, 194) !important;
+    margin-bottom: 2em
+}
+
+#None {
+    display: none;
+}
+
+body {
+    max-width: 100%;
+}
+
+table>thead {
+    background-color: whitesmoke;
+    color: #333
+}
+
+table>thead>tr>th:nth-child(1) {
+    text-align: right;
+}
+
+table>tbody>tr>td {
+    text-align: right;
+}
+
+table>tbody>tr>td:nth-child(2),
+table>tbody>tr>td:nth-child(3) {
+    text-align: center;
+}
+
+table>thead>tr>th:nth-child(2),
+table>thead>tr>th:nth-child(3) {
+    text-align: center;
+}
+
+.row {
+    max-width: 100%;
+    margin: 1em
+}
+
+table>thead>tr>th {
+    color: #333
+}
+
+
+#tableHeader,
+#portSum,
+#returns,
+#history {
+    text-align: center;
+    background: #4990C2;
+    color: whitesmoke;
+    margin: 0;
+    padding: 1em
+}
+
+.card-body {
+    color: #4990C2;
+    font-weight: 500;
+    padding: 2.5em;
 }
