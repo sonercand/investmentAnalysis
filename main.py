@@ -1,3 +1,4 @@
+"""
 from dash import Dash, dcc, html, Input, Output, State
 import dash_bootstrap_components as dbc
 from utils import StockMarketInformation as SMI, getExchanges
@@ -353,3 +354,4 @@ def update_graph(stock_ticker, n_clicks):
 
 if __name__ == "__main__":
     app.run_server()
+"""
