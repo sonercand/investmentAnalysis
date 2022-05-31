@@ -574,7 +574,7 @@ def optimise(
             id="ports",
             animate=True,
         )
-
+        ### Portfolio Holdings ###################
         list_ = list(zip(tickers, optWeightsS.round(7)))
 
         def take2(element):
@@ -600,18 +600,56 @@ def optimise(
                         ]
                     )
                 )
-
+        rows.append(
+            html.Tr(
+                [
+                    html.Td("Sum"),
+                    html.Td(np.sum(list(stockWeightDict.values()))),
+                    html.Td(investmentAmount),
+                ]
+            )
+        )
         table_body = [html.Tbody(rows)]
         table = dbc.Table(table_header + table_body, bordered=True)
-        col1 = dbc.Col([table])
+        tableContainer = dbc.Col(
+            [html.H2("Portfolio Holdings", id="tableHeader"), table], width=6
+        )
+        ## Portfolio SUmmary ###########
         portFolioExpectedReturns = prS
         portFolioExpectedRisk = pRiskS
         esgScoreC = op.portfolioESGscore(weights=optWeightsS, esgData=esgData)
         esgResult = html.P("ESG SCORE : {}".format(esgScoreC))
-        selectedValues = html.P(
-            "Selected risk range:{}, Selected esgScore:{}, expected Portfolio Return: {}, expected Portfolio Risk: {}".format(
-                riskRange, esgScore, portFolioExpectedReturns, portFolioExpectedRisk
-            )
+        portfolioSummary = dbc.Col(
+            [
+                html.Div(
+                    [
+                        html.H2("Portfolio Summary", id="portSum"),
+                        dbc.Card(
+                            dbc.CardBody(
+                                "Total Amount to invest: {}".format(investmentAmount)
+                            ),
+                        ),
+                        dbc.Card(
+                            "Annual Expected Returns: {}".format(prS.round(2)),
+                            body=True,
+                        ),
+                        dbc.Card(
+                            "Annual Expected Portfolio Volatility: {}".format(
+                                pRiskS.round(2)
+                            ),
+                            body=True,
+                        ),
+                        dbc.Card(
+                            "Current ESG Score of the Portfolio: {}".format(
+                                esgScoreC.round(2)
+                            ),
+                            body=True,
+                        ),
+                    ],
+                    id="summaryDiv",
+                )
+            ],
+            width=6,
         )
 
         # Historical Performances######################
@@ -697,17 +735,22 @@ def optimise(
             id="ports",
             animate=True,
         )
-        returnGraphContainer = dbc.Col([returnsGraph], width=6)
-        graphHistContainer = dbc.Col([graphHist], width=6)
+        returnGraphContainer = dbc.Col(
+            [html.H2("Expected Portfolio Performance", id="returns"), returnsGraph],
+            width=6,
+        )
+        graphHistContainer = dbc.Col(
+            [html.H2("Historical Performance", id="history"), graphHist], width=6
+        )
         output = [
             navigation.navbar,
             dbc.Row(
                 [
+                    portfolioSummary,
                     returnGraphContainer,
+                    html.Br(),
                     graphHistContainer,
-                    selectedValues,
-                    esgResult,
-                    col1,
+                    tableContainer,
                 ]
             ),
         ]

@@ -51,9 +51,3 @@ snpCumRet = (snpData.pct_change(1) + 1).cumprod()
 snpCumRet.dropna(inplace=True)
 print(snpCumRet)
 print(ftseCumRet)
-
-
-def transform(df):
-    df = (df.pct_change(1) + 1).cumprod()
-    df.dropna(inplace=True)
-    return df
