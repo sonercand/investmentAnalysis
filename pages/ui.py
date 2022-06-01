@@ -574,7 +574,7 @@ def optimise(
             id="ports",
             animate=True,
         )
-        ### Portfolio Holdings ###################
+        ### Portfolio Holdings ##########################################
         list_ = list(zip(tickers, optWeightsS.round(7)))
 
         def take2(element):
@@ -614,7 +614,7 @@ def optimise(
         tableContainer = dbc.Col(
             [html.H2("Portfolio Holdings", id="tableHeader"), table], width=6
         )
-        ## Portfolio SUmmary ###########
+        ## Portfolio SUmmary ####################################
         portFolioExpectedReturns = prS
         portFolioExpectedRisk = pRiskS
         esgScoreC = op.portfolioESGscore(weights=optWeightsS, esgData=esgData)
@@ -661,7 +661,8 @@ def optimise(
         # calc portfolios historic cumilative returns
         stocks_and_date = list(stockWeightDict.keys())
         dataPort = op.data[stocks_and_date]
-        cum_res = (dataPort.pct_change(1) + 1).cumprod()
+        drPort = dataPort.pct_change(1)
+        cum_res = (drPort + 1).cumprod()
         cum_res.dropna(inplace=True)
         array_ = []
         for k, v in stockWeightDict.items():
@@ -694,6 +695,7 @@ def optimise(
         snpCumRet = snpCumRet[snpCumRet.index >= portCumRet.index.min()]
         print(portCumRet.shape, snpCumRet.shape, ftseCumRet.shape)
         traces = []
+
         traces.append(
             {
                 "x": snpCumRet.index,
@@ -735,12 +737,48 @@ def optimise(
             id="ports",
             animate=True,
         )
+        ## Value At RISK ###################
+        drPort = drPort.sum(axis=1, skipna=True).round(3)
+        VaRdaily = drPort.quantile(0.01)  # at 99%
+        VaRMonthly = VaRdaily * np.sqrt(20)
+        VaRYearly = VaRdaily * np.sqrt(252)
+        figHistogram = px.histogram(drPort, nbins=100)
+        graphHistogram = dcc.Graph(id="histogram", figure=figHistogram, animate=True)
+        VaRTable = dbc.Col(
+            [
+                html.Div(
+                    [
+                        html.H2("Value At Risk @99%", id="portSum"),
+                        dbc.Card(
+                            dbc.CardBody("VaR Daily: {}".format(VaRdaily.round(2))),
+                        ),
+                        dbc.Card(
+                            "VaR Monthly: {}".format(VaRMonthly.round(2)),
+                            body=True,
+                        ),
+                        dbc.Card(
+                            "VaR Yearly: {}".format(VaRYearly.round(2)),
+                            body=True,
+                        ),
+                    ],
+                    id="varDiv",
+                )
+            ],
+            width=6,
+        )
         returnGraphContainer = dbc.Col(
             [html.H2("Expected Portfolio Performance", id="returns"), returnsGraph],
             width=6,
         )
         graphHistContainer = dbc.Col(
             [html.H2("Historical Performance", id="history"), graphHist], width=6
+        )
+        histogramContainer = dbc.Col(
+            [
+                html.H2("Histogram of Historical Daily Returns", id="history"),
+                graphHistogram,
+            ],
+            width=6,
         )
         output = [
             navigation.navbar,
@@ -749,6 +787,8 @@ def optimise(
                     portfolioSummary,
                     returnGraphContainer,
                     html.Br(),
+                    VaRTable,
+                    histogramContainer,
                     graphHistContainer,
                     tableContainer,
                 ]
