@@ -699,7 +699,7 @@ def optimise(
         traces.append(
             {
                 "x": snpCumRet.index,
-                "y": snpCumRet,
+                "y": snpCumRet.rolling(window=20).mean(),
                 "name": "S&P 500",
                 "mode": "lines",
                 "line": dict(color="#bfc1c1"),
@@ -709,7 +709,7 @@ def optimise(
         traces.append(
             {
                 "x": ftseCumRet.index,
-                "y": ftseCumRet,
+                "y": ftseCumRet.rolling(window=20).mean(),
                 "name": "FTSE 100",
                 "mode": "lines",
                 "line": dict(color="#6c7070"),
@@ -719,7 +719,7 @@ def optimise(
         traces.append(
             {
                 "x": portCumRet.index,
-                "y": portCumRet,
+                "y": portCumRet.rolling(window=20).mean(),
                 "name": "Selected Portfolio",
                 "mode": "lines",
                 "line_color": "blue",
@@ -737,34 +737,81 @@ def optimise(
             id="ports",
             animate=True,
         )
-        ## Value At RISK ###################
-        drPort = drPort.sum(axis=1, skipna=True).round(3)
-        VaRdaily = drPort.quantile(0.01)  # at 99%
+        ## Value At RISK and max drawdown ###################
+
+        drPortD = portCumRet * investmentAmount
+        print(drPortD.max(), drPortD.min())
+        window = 252
+        cumMax = drPortD.rolling(window, min_periods=1).max()
+        drawDown = drPortD / cumMax - 1.0
+        maxDailyDrawDown = drawDown.rolling(window, min_periods=1).min()
+        maxDrawDown = maxDailyDrawDown.min()
+        VaRdaily = portCumRet.pct_change(1).quantile(0.01) * investmentAmount  # at 99%
         VaRMonthly = VaRdaily * np.sqrt(20)
         VaRYearly = VaRdaily * np.sqrt(252)
-        figHistogram = px.histogram(drPort, nbins=100)
+        figHistogram = px.histogram(
+            (drPortD - drPortD.mean()) / drPortD.std(), nbins=100
+        )
         graphHistogram = dcc.Graph(id="histogram", figure=figHistogram, animate=True)
+        tracesD = []
+
+        tracesD.append(
+            {
+                "x": maxDailyDrawDown.index,
+                "y": maxDailyDrawDown,
+                "name": "Max Yearly Rolling Drawdown",
+                "mode": "lines",
+                "line_color": "red",
+            }
+        )
+        tracesD.append(
+            {
+                "x": drawDown.index,
+                "y": drawDown,
+                "name": "Drawdown",
+                "mode": "lines",
+                "line_color": "blue",
+            }
+        )
+
+        graphDrawDown = dcc.Graph(
+            id="drawDown",
+            figure={"data": tracesD, "layout": {"title": "drawdown"}},
+            animate=True,
+        )
         VaRTable = dbc.Col(
             [
                 html.Div(
                     [
-                        html.H2("Value At Risk @99%", id="portSum"),
+                        html.H2("Value At Risk(GBP) @99%", id="portSum"),
                         dbc.Card(
-                            dbc.CardBody("VaR Daily: {}".format(VaRdaily.round(2))),
+                            dbc.CardBody(
+                                "VaR Daily: {} GBP ".format(-1 * VaRdaily.round(2))
+                            ),
                         ),
                         dbc.Card(
-                            "VaR Monthly: {}".format(VaRMonthly.round(2)),
+                            "VaR Monthly: {} GBP".format(-1 * VaRMonthly.round(2)),
                             body=True,
                         ),
                         dbc.Card(
-                            "VaR Yearly: {}".format(VaRYearly.round(2)),
+                            "VaR Yearly: {} GBP".format(-1 * VaRYearly.round(2)),
+                            body=True,
+                        ),
+                        dbc.Card(
+                            "Max Yearly Draw Down: {} (%)".format(
+                                (-100 * maxDrawDown).round(2)
+                            ),
                             body=True,
                         ),
                     ],
                     id="varDiv",
                 )
             ],
-            width=6,
+            width=4,
+        )
+        drawDownContainer = dbc.Col(
+            [html.H2("Drawdown Plot", id="returns"), graphDrawDown],
+            width=4,
         )
         returnGraphContainer = dbc.Col(
             [html.H2("Expected Portfolio Performance", id="returns"), returnsGraph],
@@ -775,10 +822,10 @@ def optimise(
         )
         histogramContainer = dbc.Col(
             [
-                html.H2("Histogram of Historical Daily Returns", id="history"),
+                html.H2("Histogram of Daily Returns", id="history"),
                 graphHistogram,
             ],
-            width=6,
+            width=4,
         )
         output = [
             navigation.navbar,
@@ -787,8 +834,9 @@ def optimise(
                     portfolioSummary,
                     returnGraphContainer,
                     html.Br(),
-                    VaRTable,
+                    drawDownContainer,
                     histogramContainer,
+                    VaRTable,
                     graphHistContainer,
                     tableContainer,
                 ]
