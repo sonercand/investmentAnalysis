@@ -574,6 +574,7 @@ def optimise(
             id="ports",
             animate=True,
         )
+
         ### Portfolio Holdings ##########################################
         list_ = list(zip(tickers, optWeightsS.round(7)))
 
@@ -583,7 +584,14 @@ def optimise(
         list_.sort(key=take2, reverse=True)
         table_header = [
             html.Thead(
-                html.Tr([html.Th("Stock"), html.Th("Weight"), html.Th("Amount(GBP)")])
+                html.Tr(
+                    [
+                        html.Th("Stock"),
+                        html.Th("Weight"),
+                        html.Th("Amount(GBP)"),
+                        html.Th("Number of Stocks"),
+                    ]
+                )
             )
         ]
         rows = []
@@ -591,12 +599,17 @@ def optimise(
         for s, w in list_:
             if w > 0:
                 stockWeightDict[s] = w
+                # get current stock price
+                price = op.data[op.data.index == op.data.index[-1]][s].values
+                print(op.data.index.max(), op.data.index[-1])
+                print(price)
                 rows.append(
                     html.Tr(
                         [
                             html.Td(s),
                             html.Td(str(w)),
                             html.Td(str((w * investmentAmount).round(2))),
+                            html.Td((w * investmentAmount / price).round(2)),
                         ]
                     )
                 )
@@ -750,7 +763,10 @@ def optimise(
         VaRMonthly = VaRdaily * np.sqrt(20)
         VaRYearly = VaRdaily * np.sqrt(252)
         figHistogram = px.histogram(
-            (drPortD - drPortD.mean()) / drPortD.std(), nbins=100
+            (drPortD - drPortD.mean()) / drPortD.std(),
+            nbins=100,
+            color_discrete_sequence=["indianred"],
+            opacity=0.7,
         )
         graphHistogram = dcc.Graph(id="histogram", figure=figHistogram, animate=True)
         tracesD = []
