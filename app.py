@@ -1,5 +1,10 @@
 from dash import Dash, dcc, html, Input, Output, callback
-from pages import navigation, portfolioGeneration, ui  # , stock, portfolio,uitest
+from pages import (
+    navigation,
+    portfolioGeneration,
+    # ui,
+    uiCAPM,
+)  # , stock, portfolio,uitest
 import dash_bootstrap_components as dbc
 
 
@@ -28,7 +33,9 @@ def display_page(pathname):
     elif pathname == "/portfolio-generation":
         return portfolioGeneration.layout
     elif pathname == "/uitest":
-        return ui.layout
+        return None  # ui.layout
+    elif pathname == "/capm":
+        return uiCAPM.layout
     else:
         return "404"
 

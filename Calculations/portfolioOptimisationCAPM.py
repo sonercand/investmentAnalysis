@@ -167,7 +167,7 @@ def setRandomWeights(n: int) -> np.ndarray:
 
 
 def genRandomPortfolios(
-    data, expectedQuarReturns, tickers, n_iter=10000
+    data, expectedQuarReturns, tickers, covMatrix, n_iter=10000
 ) -> pd.DataFrame:
     """generate random portfolios and their risk and return values"""
     results = []
