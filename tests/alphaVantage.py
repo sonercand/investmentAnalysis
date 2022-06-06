@@ -4,6 +4,7 @@ import pandas as pd
 from dotenv import load_dotenv
 import requests
 import json
+import time
 
 """ most of the functions work only for US stocks"""
 load_dotenv()
@@ -24,9 +25,51 @@ def formatFundamental(dict_):
     return df
 
 
-res = getFundamental(symbol="AAPL", function="INCOME_STATEMENT")
-df = formatFundamental(res)
+## Load INCOME STATEMENTS ##############################################
+tickers = list(pd.read_csv(".\data\snp500Components.csv")["Symbol"].values)
+m = 0
+maxRequestsPerMin = 5
+try:
+    getAlreadySavedTickers = list(
+        pd.read_csv(".\data\income_statementsSNP.csv")["ticker"].values
+    )
+except Exception as e:
+    print(e)
+    getAlreadySavedTickers = []
+remaining = set(tickers) - set(getAlreadySavedTickers)
+queue = list(remaining).copy()
+print(len(queue), len(getAlreadySavedTickers), len(tickers))
 
-print(df)
+while queue:
+    t1 = time.time()
+    ticker = queue.pop()
+    try:
+        res = getFundamental(symbol=ticker, function="INCOME_STATEMENT")
+        t2 = time.time()
+        if t2 - t1 < 60 / maxRequestsPerMin:
+            time.sleep(12 + 1 - (t2 - t1))
+
+    except Exception as e:
+        print("--------getFundamenta failed----")
+        print(e)
+        print(ticker)
+        print(res)
+    try:
+        df = formatFundamental(res)
+    except Exception as e:
+        print("format fundamental failed")
+        print(e, ticker, res)
+
+    mode = "w" if m == 0 and len(getAlreadySavedTickers) == 0 else "a"
+    header = True if m == 0 and len(getAlreadySavedTickers) == 0 else False
+    try:
+        df.to_csv(
+            "./data/income_statementsSNP.csv", index=False, mode=mode, header=header
+        )
+    except Exception as e:
+        print(e)
+        print(ticker, m)
+        continue
+    m += 1
 
 ## income statements
