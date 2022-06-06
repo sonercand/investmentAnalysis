@@ -25,14 +25,13 @@ def formatFundamental(dict_):
     return df
 
 
-## Load INCOME STATEMENTS ##############################################
+## Load Balance Sheet ##############################################
 tickers = list(pd.read_csv(".\data\snp500Components.csv")["Symbol"].values)
 m = 0
 maxRequestsPerMin = 5
+save_ = ".\\data\\balance_sheetSNP.csv"
 try:
-    getAlreadySavedTickers = list(
-        pd.read_csv(".\data\income_statementsSNP.csv")["ticker"].values
-    )
+    getAlreadySavedTickers = list(pd.read_csv(save_)["ticker"].values)
 except Exception as e:
     print(e)
     getAlreadySavedTickers = []
@@ -44,7 +43,7 @@ while queue:
     t1 = time.time()
     ticker = queue.pop()
     try:
-        res = getFundamental(symbol=ticker, function="INCOME_STATEMENT")
+        res = getFundamental(symbol=ticker, function="BALANCE_SHEET")
         t2 = time.time()
         if t2 - t1 < 60 / maxRequestsPerMin:
             time.sleep(12 + 1 - (t2 - t1))
@@ -63,9 +62,7 @@ while queue:
     mode = "w" if m == 0 and len(getAlreadySavedTickers) == 0 else "a"
     header = True if m == 0 and len(getAlreadySavedTickers) == 0 else False
     try:
-        df.to_csv(
-            "./data/income_statementsSNP.csv", index=False, mode=mode, header=header
-        )
+        df.to_csv(save_, index=False, mode=mode, header=header)
     except Exception as e:
         print(e)
         print(ticker, m)
