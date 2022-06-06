@@ -5,6 +5,7 @@ import numpy as np
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from scipy.optimize import minimize
+import time
 
 
 def processData(data, esgData, expectedQuarReturns, tickers, period=2):
@@ -22,9 +23,11 @@ def processData(data, esgData, expectedQuarReturns, tickers, period=2):
 
     data = data.resample("M").last()
     monthlyLogReturns = np.log(data / data.shift(1))[1:]
+    monthlyLogReturns.fillna(method="bfill", inplace=True)
     covMatrix = monthlyLogReturns.cov()
     esgData = esgData[tickers]
     expectedQuarReturns = expectedQuarReturns[expectedQuarReturns.ticker.isin(tickers)]
+    expectedQuarReturns.fillna(-1, inplace=True)
     return data, monthlyLogReturns, covMatrix, esgData, expectedQuarReturns
 
 
@@ -38,18 +41,20 @@ def portfolioReturn(data, expectedQuarReturns, weights):
         sum_ += ret * weights[k]
 
         k += 1
+
     return sum_ * 3
 
 
 def portfolioRisk(covMatrix, weights):
     varPort = np.dot(weights.T, np.dot(covMatrix, weights))
+
     try:
         stdPort = np.sqrt(varPort)
         stdPortAnnual = stdPort * np.sqrt(12)
+
         return stdPortAnnual
     except Exception as e:
         print(e, varPort, weights)
-    return None
 
 
 def portfolioESGscore(weights, esgData):
@@ -147,6 +152,8 @@ def maximizePortfolioReturns(
     initialWeights = np.ones(len(tickers)) / len(
         tickers
     )  # self.setRandomWeights(len(tickers))
+    print("started optimisation")
+    t1 = time.time()
     result = minimize(
         fun=objFun,
         x0=initialWeights,
@@ -155,7 +162,9 @@ def maximizePortfolioReturns(
         bounds=bounds,
         constraints=constraits,
     )
-
+    print("optimisation ended")
+    print("seconds it took: ")
+    print(time.time() - t1)
     return result["x"]
 
 

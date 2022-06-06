@@ -1,4 +1,3 @@
-"""
 from re import S
 from click import style
 from dash import dash, dcc, html, Input, Output, State, callback, callback_context
@@ -404,4 +403,3 @@ def toggle_modal(n1, is_open):
     if n1:
         return not is_open
     return is_open
-"""

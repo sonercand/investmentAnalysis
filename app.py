@@ -3,6 +3,7 @@ from pages import (
     navigation,
     portfolioGeneration,
     # ui,
+    # uitest,
     uiCAPM,
 )  # , stock, portfolio,uitest
 import dash_bootstrap_components as dbc

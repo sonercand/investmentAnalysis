@@ -487,15 +487,16 @@ def optimise(
         optWeightsS = maximizePortfolioReturns(
             data1, covMatrix, tickers, expectedQuarReturns, risk, esgScore, esgData
         )
-        prS = portfolioRisk(covMatrix=covMatrix, weights=optWeightsS)
-        pRiskS = portfolioReturn(
+
+        pRiskS = portfolioRisk(covMatrix=covMatrix, weights=optWeightsS)
+
+        prS = portfolioReturn(
             data1, expectedQuarReturns=expectedQuarReturns, weights=optWeightsS
         )
 
         # calculate expected returns for the user selected time frame
         expectedReturns = []
         worstReturns = []
-        expectedRisks = []
         bestReturns = []
         years = []
         lower_ = []
