@@ -38,8 +38,6 @@ data["Date"] = pd.to_datetime(data["Date"])
 data.set_index("Date", inplace=True)
 data.sort_index(inplace=True)
 data = data.reset_index()
-# logReturns = np.log(data / data.shift(1))[1:]
-# logReturns.fillna(method="bfill", inplace=True)
 window = 13 * 7  # days ->  3 months which is 13 weeks.
 
 
