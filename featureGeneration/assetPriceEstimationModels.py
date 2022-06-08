@@ -19,6 +19,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 import matplotlib.pyplot as plt
 
+pd.options.mode.chained_assignment = None  # default='warn'
 # Load Current Adjusted close prices(5 years)
 adjC = pd.read_csv("./data/snpFtseClose.csv")
 # DATA PROCESSING ##############################################
@@ -33,7 +34,6 @@ adjC["Date"] = pd.to_datetime(adjC.Date)
 adjC = adjC.sort_values(by=["Date"])
 adjC.ffill(inplace=True)
 adjC.bfill(inplace=True)
-print(cols)
 stocks = list(cols).copy()
 stocks.remove("Date")
 # load Balance Sheet and Income Statements
@@ -45,15 +45,13 @@ isF = pd.read_csv("./data/incomeFeatures.csv")
 momentum = pd.read_csv("./data/momentumSNP.csv")
 ### CREATE A MODEL PER STOCK ####################################
 for stock in stocks:
-    if stock == "AOS":
-        continue
-    try:
-        yLabel = adjC[[stock, "Date"]]
-    except Exception as e:
-        print(e)
-        print(stock)
-        continue
+    # checks##########
+    # 1) stock price data
+    yLabel = adjC[[stock, "Date"]]
+
+    # 2) balance sheet data
     bsF_sub = bsF[bsF.ticker == stock]  # filter balance sheet for the given stock
+
     xBase = adjC[["Date", stock]]  # create a base df
     xBase["rollingMean"] = (
         xBase[[stock]].rolling(int(252.0 / 4.0)).mean()
@@ -69,12 +67,9 @@ for stock in stocks:
     dfm = pysqldf(query)
     dfm["fiscalDateEnding2"] = dfm["fiscalDateEnding"]
     dfm.drop(["fiscalDateEnding"], axis=1, inplace=True)
-    # join income statements #####################
-    try:
-        isF_sub = isF[isF.ticker == stock]
-    except:
-        print(stock)
-        continue
+    # drop null columns
+    dfm = dfm.dropna(axis=1, how="all")
+    isF_sub = isF[isF.ticker == stock]
     isF_sub["fiscalDateEnding"] = pd.to_datetime(isF_sub["fiscalDateEnding"])
     query = """
     with get_data as (
@@ -83,27 +78,38 @@ for stock in stocks:
     t3.Date = gd.Date and t3.max_ =gd.fiscalDateEnding
     """
     dfa = pysqldf(query)
+    dfa = dfa.dropna(axis=1, how="all")
     # join rolling momentum #######################
     moment = momentum[["Date", stock]]
     moment["Date"] = pd.to_datetime(moment["Date"])
     query = """
-        select t1.*,t2.{} as momentum from dfa t1 left  join moment t2 on t1.Date== t2.Date
+        select t1.*,t2.`{}` as momentum from dfa t1 left  join moment t2 on t1.Date== t2.Date
     """.format(
         stock
     )
     dff = pysqldf(query)
+    dff = dff.dropna(axis=1, how="all")
     # process data to add labels
     dff["Date"] = pd.to_datetime(dff.Date)
-    dff["labelDate"] = dff["Date"] + timedelta(days=int(252 / 4))
 
+    dff["labelDate"] = dff["Date"] + timedelta(days=int(252 / 4))
+    if stock == "ALL":  # ALL is giving sql error as a column
+        dff["nALL"] = dff["ALL"]
+        dff.drop("ALL", axis=1, inplace=True)
+        stock = "nALL"
     query = """
     with get_data as ( select * from dff)
-    select gd.*,t2.{} as label from get_data gd left join (select  Date,{} from get_data) t2 on gd.labelDate=t2.Date
+    select gd.*,t2.col as label from get_data gd left join (select  Date,{} as col from get_data) t2 on gd.labelDate=t2.Date
     """.format(
-        stock, stock
+        stock
     )
     dffL = pysqldf(query)
-    dffL.dropna(inplace=True)  # drop na
+    dffL = dffL.dropna(axis=1, how="all")
+    if stock == "nALL":
+        dffL["ALL"] = dffL["nALL"]
+        dffL.drop("nALL", axis=1, inplace=True)
+        stock = "ALL"
+    # dffL.dropna(inplace=True)  # drop na
 
     infomationColumns = set(
         [
@@ -120,14 +126,26 @@ for stock in stocks:
     features_cols = columns - infomationColumns
     features_cols = list(features_cols)
     label_col = "label"
-    dffL = dffL.dropna()
-    dffL = dffL[~dffL.isin([np.nan, np.inf, -np.inf]).any(1)]
-    features_and_labels = dffL[features_cols]
-    label = dffL[label_col]
 
-    scaler = MinMaxScaler()
-    scaler.fit(features_and_labels)
-    scaled = scaler.transform(features_and_labels)
+    dffL = dffL[~dffL.isin([np.inf, -np.inf]).any(1)]
+    dffL = dffL.dropna(subset=["label"])
+    dffL = dffL.fillna(0)
+    features_and_labels = dffL[features_cols]
+    cols = list(features_and_labels.columns)
+    cols.remove("label")
+    features_and_labels = features_and_labels[cols]
+    label = dffL[label_col]
+    try:
+        scaler = MinMaxScaler()
+        scaler.fit(features_and_labels)
+        scaled = scaler.transform(features_and_labels)
+    except Exception as e:
+        print(e)
+        print(stock)
+        print("dffL")
+        print(dffL)
+        print("dff")
+        print(dff)
 
     featuresTrain, featuresVal, labelsTrain, labelsVal = train_test_split(
         features_and_labels, label, test_size=0.15, random_state=12
@@ -149,21 +167,20 @@ for stock in stocks:
         ]
     )
     model.build(featuresTrain.shape)
-    model.compile(loss="mean_absolute_error", optimizer=tf.keras.optimizers.Adam(0.01))
-    print(model.summary())
+    model.compile(
+        loss="mean_absolute_percentage_error", optimizer=tf.keras.optimizers.Adam(0.01)
+    )
     history = model.fit(
         featuresTrain,
         labelsTrain,
-        epochs=400,
+        epochs=150,
         # Suppress logging.
         verbose=0,
-        validation_split=0.2,
+        validation_split=0.1,
         callbacks=[model_checkpoint],
     )
     model.load_weights(bst_model_path)
     test_r = {}
-    test_r["test_results"] = model.evaluate(featuresVal, labelsVal, verbose=0)
+    test_r[stock] = model.evaluate(featuresVal, labelsVal, verbose=0)
     print(test_r)
     test_predictions = model.predict(featuresVal).flatten()
-    plt.scatter(test_predictions, labelsVal)
-    plt.show()
