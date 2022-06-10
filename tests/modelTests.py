@@ -1,12 +1,4 @@
-"""
-# Estimate expected asset price using ml
-* features are: balance sheets, income balance for the last 5 years and momentum
-* scope: portfolio will be reallocated every 13 weeks therefore every 13 weeks returns should be estimated for the next reallocation date.
-
-
-
-"""
-from pyexpat import features
+import os
 import pandas as pd
 from pandasql import sqldf
 from datetime import timedelta
@@ -20,31 +12,30 @@ from sklearn.preprocessing import MinMaxScaler
 import matplotlib.pyplot as plt
 
 pd.options.mode.chained_assignment = None  # default='warn'
-# Load Current Adjusted close prices(5 years)
+
+fs = os.listdir("./data/modeldata")
+
+# load data sets and filter for snp500 stocks
 adjC = pd.read_csv("./data/snpFtseClose.csv")
-# DATA PROCESSING ##############################################
-# 1) filter for snp500
 cols = list(adjC.columns)
 cols = [
     col for col in cols if not col.upper().endswith(".L")
 ]  # remove LSE stocks tickers
 adjC = adjC[cols]
-# 2) replace nan
 adjC["Date"] = pd.to_datetime(adjC.Date)
 adjC = adjC.sort_values(by=["Date"])
 adjC.ffill(inplace=True)
 adjC.bfill(inplace=True)
 stocks = list(cols).copy()
 stocks.remove("Date")
-# load Balance Sheet and Income Statements
 bsF = pd.read_csv("./data/balanceFeatures.csv")
 bsF["fiscalDateEnding"] = pd.to_datetime(bsF["fiscalDateEnding"])
 # load income statement
 isF = pd.read_csv("./data/incomeFeatures.csv")
 # load momentum
 momentum = pd.read_csv("./data/momentumSNP.csv")
-### CREATE A MODEL PER STOCK ####################################
-for stock in stocks:
+
+for stock in [stocks[1]]:
     try:
         # checks##########
         # 1) stock price data
@@ -93,25 +84,6 @@ for stock in stocks:
         # process data to add labels
         dff["Date"] = pd.to_datetime(dff.Date)
 
-        dff["labelDate"] = dff["Date"] + timedelta(days=int(252 / 4))
-        if stock == "ALL":  # ALL is giving sql error as a column
-            dff["nALL"] = dff["ALL"]
-            dff.drop("ALL", axis=1, inplace=True)
-            stock = "nALL"
-        query = """
-        with get_data as ( select * from dff)
-        select gd.*,t2.col as label from get_data gd left join (select  Date,{} as col from get_data) t2 on gd.labelDate=t2.Date
-        """.format(
-            stock
-        )
-        dffL = pysqldf(query)
-        dffL = dffL.dropna(axis=1, how="all")
-        if stock == "nALL":
-            dffL["ALL"] = dffL["nALL"]
-            dffL.drop("nALL", axis=1, inplace=True)
-            stock = "ALL"
-        # dffL.dropna(inplace=True)  # drop na
-
         infomationColumns = set(
             [
                 "Date",
@@ -119,24 +91,25 @@ for stock in stocks:
                 "ticker",
                 "fiscalDateEnding",
                 "fiscalDateEnding2",
-                "labelDate",
                 "ticker:1",
             ]
         )
+        dffL = dff
+        predictionPoint = dffL.iloc[-1:]  # take the last data point for the prediction
+
         columns = set(dffL.columns)
         features_cols = columns - infomationColumns
         features_cols = list(features_cols)
-        label_col = "label"
 
         dffL = dffL[~dffL.isin([np.inf, -np.inf]).any(1)]
-        dffL = dffL.dropna(subset=["label"])
+        predictionPoint = predictionPoint[
+            ~predictionPoint.isin([np.inf, -np.inf]).any(1)
+        ]
+        predictionPoint = predictionPoint.fillna(0)
         dffL = dffL.fillna(0)
 
         features_and_labels = dffL[features_cols]
-        cols = list(features_and_labels.columns)
-        cols.remove("label")
-        features_and_labels = features_and_labels[cols]
-        label = dffL[label_col]
+        print(features_and_labels.shape, predictionPoint[features_cols].shape)
         try:
             scaler = MinMaxScaler()
             scaler.fit(features_and_labels)
@@ -148,15 +121,16 @@ for stock in stocks:
             print(dffL)
             print("dff")
             print(dff)
-
-        featuresTrain, featuresVal, labelsTrain, labelsVal = train_test_split(
-            features_and_labels, label, test_size=0.15, random_state=12
+        print(scaled.shape)
+        predictionPoint_m = predictionPoint.fillna(0)
+        print("prediction pont")
+        predictionPoint_m = predictionPoint_m[features_cols]
+        print(predictionPoint_m.values)
+        predictionPoint_m = scaler.fit_transform(
+            predictionPoint_m.values.reshape(-1, 1)
         )
 
         bst_model_path = "./data/modeldata/{}.h5".format(stock)
-        model_checkpoint = ModelCheckpoint(
-            bst_model_path, save_best_only=True, save_weights_only=True
-        )
 
         model = keras.Sequential(
             [
@@ -168,25 +142,16 @@ for stock in stocks:
                 layers.Dense(1),
             ]
         )
-        model.build(featuresTrain.shape)
+        model.build(predictionPoint_m)
         model.compile(
             loss="mean_absolute_percentage_error",
             optimizer=tf.keras.optimizers.Adam(0.01),
         )
-        history = model.fit(
-            featuresTrain,
-            labelsTrain,
-            epochs=150,
-            # Suppress logging.
-            verbose=0,
-            validation_split=0.1,
-            callbacks=[model_checkpoint],
-        )
+
         model.load_weights(bst_model_path)
         test_r = {}
-        test_r[stock] = model.evaluate(featuresVal, labelsVal, verbose=0)
-        print(test_r)
-        test_predictions = model.predict(featuresVal).flatten()
+
+        test_prediction = model.predict(predictionPoint_m).flatten()
+
     except Exception as e:
         print(e)
-        print(stock)
