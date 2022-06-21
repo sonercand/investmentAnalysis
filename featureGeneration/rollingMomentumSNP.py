@@ -31,6 +31,8 @@ def momentum(ticker, data, window):
 
 
 data = pd.read_csv(".\data\snpFtseClose.csv")  # adjusted close data
+data["Date"] = data["Unnamed: 0"]
+data.drop(["Unnamed: 0"], axis=1, inplace=True)
 cols = list(data.columns)
 cols = [col for col in cols if not col.upper().endswith(".L")]
 data = data[cols]

@@ -19,7 +19,7 @@ dfs = []
 for ticker in tickers:
     new_df = pd.DataFrame()
     try:
-        data = yf.download(ticker, "2017-05-26", "2022-05-25")
+        data = yf.download(ticker, "2017-05-26", "2022-06-09")
         data = data["Adj Close"]
         new_df[ticker] = data
 

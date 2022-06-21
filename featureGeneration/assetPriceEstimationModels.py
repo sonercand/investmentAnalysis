@@ -7,6 +7,7 @@
 
 """
 from pyexpat import features
+from this import d
 import pandas as pd
 from pandasql import sqldf
 from datetime import timedelta
@@ -22,14 +23,17 @@ import matplotlib.pyplot as plt
 pd.options.mode.chained_assignment = None  # default='warn'
 # Load Current Adjusted close prices(5 years)
 adjC = pd.read_csv("./data/snpFtseClose.csv")
-# DATA PROCESSING ##############################################
+##################################### DATA PROCESSING ##############################################
 # 1) filter for snp500
+adjC["Date"] = adjC["Unnamed: 0"]
+adjC.drop(["Unnamed: 0"], axis=1, inplace=True)
 cols = list(adjC.columns)
 cols = [
     col for col in cols if not col.upper().endswith(".L")
 ]  # remove LSE stocks tickers
 adjC = adjC[cols]
 # 2) replace nan
+
 adjC["Date"] = pd.to_datetime(adjC.Date)
 adjC = adjC.sort_values(by=["Date"])
 adjC.ffill(inplace=True)
@@ -43,8 +47,9 @@ bsF["fiscalDateEnding"] = pd.to_datetime(bsF["fiscalDateEnding"])
 isF = pd.read_csv("./data/incomeFeatures.csv")
 # load momentum
 momentum = pd.read_csv("./data/momentumSNP.csv")
+print(momentum)
 ### CREATE A MODEL PER STOCK ####################################
-for stock in stocks:
+for stock in stocks[1:2]:
     try:
         # checks##########
         # 1) stock price data
@@ -104,8 +109,11 @@ for stock in stocks:
         """.format(
             stock
         )
+
         dffL = pysqldf(query)
         dffL = dffL.dropna(axis=1, how="all")
+        predicionPoint = dffL.iloc[-1:]
+
         if stock == "nALL":
             dffL["ALL"] = dffL["nALL"]
             dffL.drop("nALL", axis=1, inplace=True)
@@ -128,19 +136,31 @@ for stock in stocks:
         features_cols = list(features_cols)
         label_col = "label"
 
-        dffL = dffL[~dffL.isin([np.inf, -np.inf]).any(1)]
+        dffL.replace([np.inf, -np.inf], np.nan, inplace=True)
         dffL = dffL.dropna(subset=["label"])
         dffL = dffL.fillna(0)
+        predictionPoint = predicionPoint[~predicionPoint.isin([np.inf, -np.inf]).any(1)]
+        predictionPoint.replace([np.inf, -np.inf], np.nan, inplace=True)
+        predictionPoint = predicionPoint.fillna(0)
 
         features_and_labels = dffL[features_cols]
+        predictionPoint = predictionPoint[features_cols]
         cols = list(features_and_labels.columns)
         cols.remove("label")
         features_and_labels = features_and_labels[cols]
+        predictionPoint = predictionPoint[cols]
         label = dffL[label_col]
+        # scaling:
         try:
             scaler = MinMaxScaler()
             scaler.fit(features_and_labels)
             scaled = scaler.transform(features_and_labels)
+            print(predictionPoint.shape)
+            print(scaled.shape)
+            print("scaling prediction point")
+            scaledPredictionPoint = scaler.transform(predictionPoint)
+            print(scaledPredictionPoint.shape)
+
         except Exception as e:
             print(e)
             print(stock)
@@ -187,6 +207,9 @@ for stock in stocks:
         test_r[stock] = model.evaluate(featuresVal, labelsVal, verbose=0)
         print(test_r)
         test_predictions = model.predict(featuresVal).flatten()
+        predictionPointPred = model.predict(scaledPredictionPoint)
+        print(predictionPoint)
+        print(predictionPointPred[0])
     except Exception as e:
         print(e)
         print(stock)

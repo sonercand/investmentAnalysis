@@ -1,4 +1,3 @@
-from time import strftime
 import numpy as np
 import pandas as pd
 import yfinance as yf
@@ -13,7 +12,7 @@ class CAPM:
         self.UKMarketTicker = "^FTMC"
         self.USMarketTIcker = "^GSPC"
         self.data = self.downloadData()
-        self.data.columns = stocks
+        self.data.columns = self.columns
         self.splitUKUS()
         self.setMarketData()
 
@@ -36,11 +35,13 @@ class CAPM:
     def downloadData(self):
         data_ = []
         j = 0
+        self.columns = []
         for stock in self.stocks:
             try:
                 dfT = yf.download(stock, self.start_date, self.end_date)["Adj Close"]
                 if len(dfT) > 5:
                     data_.append(dfT)
+                    self.columns.append(stock)
                 else:
                     print("data frame has few rows")
                     print(dfT)
@@ -48,6 +49,7 @@ class CAPM:
             except Exception as e:
                 print(e)
                 print(stock)
+                self.stocks.remove(stock)
 
         df = pd.concat(data_, axis=1)
         return df.resample("M").last()
@@ -111,7 +113,11 @@ if __name__ == "__main__":
     twoYearAgo = twoYearAgo.strftime("%Y-%m-%d")
     print(today, twoYearAgo)
     stocks = list(pd.read_csv("./data/snpFtseClose.csv").columns)
-    stocks.remove("Date")
+
+    try:
+        stocks.remove("Date")
+    except:
+        stocks.remove("Unnamed: 0")
     print(len(stocks))
     # stocks = ["mng.l", "AAPL", "MSFT", "PRU.L"]
     capm = CAPM(stocks=stocks, start_date=twoYearAgo, end_date=today)

@@ -13,6 +13,7 @@ def processData(data, esgData, expectedQuarReturns, tickers, period=2):
 
     currentDay = datetime.now()
     lastYearToday = currentDay - relativedelta(years=period)
+    data["Date"] = data["Unnamed: 0"]
     data["Date"] = pd.to_datetime(data["Date"])
     data.set_index("Date", inplace=True)
     data.sort_index(inplace=True)
@@ -42,7 +43,7 @@ def portfolioReturn(data, expectedQuarReturns, weights):
 
         k += 1
 
-    return sum_ * 3
+    return sum_
 
 
 def portfolioRisk(covMatrix, weights):
@@ -148,7 +149,9 @@ def maximizePortfolioReturns(
                 "args": (covMatrix, risk),
             }
         )
+
     bounds = tuple((0, 1) for _ in range(len(tickers)))
+    # bounds = tuple((0, 1) for _ in range(5))
     initialWeights = np.ones(len(tickers)) / len(
         tickers
     )  # self.setRandomWeights(len(tickers))
