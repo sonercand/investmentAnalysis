@@ -13,8 +13,10 @@ def processData(data, esgData, expectedQuarReturns, tickers, period=2):
 
     currentDay = datetime.now()
     lastYearToday = currentDay - relativedelta(years=period)
-    data["Date"] = pd.to_datetime(data["Date"])
-    data.set_index("Date", inplace=True)
+    # data["Date"] = data.index
+    data.index = pd.to_datetime(data.index)
+    data.dropna(axis=1, how="all", inplace=True)
+    # data.set_index("Date", inplace=True)
     data.sort_index(inplace=True)
     data = data[
         (pd.to_datetime(data.index) > lastYearToday)
@@ -23,6 +25,7 @@ def processData(data, esgData, expectedQuarReturns, tickers, period=2):
 
     data = data.resample("M").last()
     monthlyLogReturns = np.log(data / data.shift(1))[1:]
+    print(monthlyLogReturns)
     monthlyLogReturns.fillna(method="bfill", inplace=True)
     covMatrix = monthlyLogReturns.cov()
     esgData = esgData[tickers]
@@ -42,7 +45,7 @@ def portfolioReturn(data, expectedQuarReturns, weights):
 
         k += 1
 
-    return sum_ * 3
+    return sum_
 
 
 def portfolioRisk(covMatrix, weights):

@@ -2,6 +2,7 @@
 same as ui however use capm for the estimated returns
 """
 
+from calendar import month
 from dash import dash, dcc, html, Input, Output, State, callback, callback_context
 
 from pages import navigation
@@ -467,7 +468,10 @@ def optimise(
         stocks = list(stocks)
         tickers = stocks
         data = pd.read_csv("./data/snpFtseClose.csv")
-
+        data["Date"] = data["Unnamed: 0"]
+        data.drop(["Unnamed: 0"], axis=1)
+        data.set_index("Date", inplace=True)
+        data.sort_index(inplace=True)
         expectedQuarReturns = pd.read_csv("./data/expectedReturns4monthlyCAPM.csv")
         esgData = pd.read_csv("./data/esgScores_aligned.csv")
         risk = riskRange
@@ -475,11 +479,12 @@ def optimise(
         data1, monthlyLogReturns, covMatrix, esgData, expectedQuarReturns = processData(
             data, esgData, expectedQuarReturns, tickers
         )
-
+        print(data)
+        print("monthly log returns ...........")
+        print(monthlyLogReturns)
         # data["Date"] = pd.to_datetime(data["Date"])
 
         # data.set_index("Date", inplace=True)
-        data.sort_index(inplace=True)
 
         data = data[stocks]
         # data.reset_index(inplace=True)
