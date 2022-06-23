@@ -139,6 +139,8 @@ def plotGraph(n_clicks, sectors, riskValue, objFun, logReturns, esgScore):
         esgData = esgData[stocks]
         stocks.append("Date")
         print(stocks)
+        data["Date"] = data["Unnamed: 0"]
+        data.drop(["Unnamed: 0"], axis=1)
         data = data[stocks]
         print(data)
 

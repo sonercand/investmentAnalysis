@@ -163,7 +163,7 @@ page2Html = [
 ]
 
 modalPage2 = modalPage(
-    modalHeader="Duration of the Investment",
+    modalHeader="Duration of the Investment & Initial Lump sum",
     pageId="page2",
     inputHtml=page2Html,
     backButtonId="b2",
@@ -295,7 +295,7 @@ page5Html = [
     html.P(id="Summary"),
 ]
 modalPage5 = modalPage(
-    modalHeader="Summary",
+    modalHeader="Risk Range & Display Summary",
     pageId="page5",
     inputHtml=page5Html,
     backButtonId="b5",
@@ -605,7 +605,7 @@ def optimise(
                         html.Th("Stock"),
                         html.Th("Weight"),
                         html.Th("Amount(GBP)"),
-                        html.Th("Number of Stocks"),
+                        # html.Th("Number of Stocks"),
                     ]
                 )
             )
@@ -613,10 +613,11 @@ def optimise(
         rows = []
         stockWeightDict = {}
         for s, w in list_:
-            if w > 0:
+            if w > 0.0001:
                 stockWeightDict[s] = w
                 # get current stock price
-                price = data[data.index == data.index[-1]][s].values
+                price = data[data.index == data.index[-2]][s].values[0]
+                print(price)
 
                 rows.append(
                     html.Tr(
@@ -624,7 +625,7 @@ def optimise(
                             html.Td(s),
                             html.Td(str(w)),
                             html.Td(str((w * investmentAmount).round(2))),
-                            html.Td((w * investmentAmount / price).round(2)),
+                            # html.Td(str((w * investmentAmount / price).round(2))),
                         ]
                     )
                 )
